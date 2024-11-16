@@ -17,41 +17,81 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 		{
 			_context = context;
 		}
-		[Authorize]
-		public IActionResult GetAppointments()
-		{
-			//var appointments = _context.Appointments.Include(a=>a.Service).Where(a => a.UserId == User.Claims.ToList()[1].Value).ToList();
-			var appointments = _context.Appointments.Include(a => a.Service).ToList();
-			return View(appointments);
-		}
-		public IActionResult AddAppointment()
-		{
-			var services = _context.Services.ToList();
-			List<SelectListItem> serviceList = services.Select(service => new SelectListItem
-			{
-				Text = service.Name,
-				Value = service.Id // veya farklı bir değer kullanabilirsiniz
-			}).ToList();
 
-			ViewBag.ServiceList = serviceList;
-			return View();
-		}
+        public IActionResult GetAppointments()
+        {
+            var appointments = _context.Appointments.Include(a => a.Service).Where(a => a.AppUserId == User.Claims.ToList()[1].Value).ToList();
+            var services = _context.Services.ToList();
+
+            List<SelectListItem> serviceList = services.Select(service => new SelectListItem
+            {
+                Text = service.Name,
+                Value = service.Id
+            }).ToList();
+
+            ViewBag.ServiceList = serviceList;
+
+            return View(appointments);
+        }
+
+
+        //[Authorize]
+        //public IActionResult GetAppointments()
+        //{
+        //	//var appointments = _context.Appointments.Include(a=>a.Service).Where(a => a.UserId == User.Claims.ToList()[1].Value).ToList();
+        //	var appointments = _context.Appointments.Include(a => a.Service).ToList();
+        //	return View(appointments);
+        //}
+        //      public IActionResult AddAppointment()
+        //{
+        //	var services = _context.Services.ToList();
+        //	List<SelectListItem> serviceList = services.Select(service => new SelectListItem
+        //	{
+        //		Text = service.Name,
+        //		Value = service.Id // veya farklı bir değer kullanabilirsiniz
+        //	}).ToList();
+
+        //	ViewBag.ServiceList = serviceList;
+        //	return View();
+        //}
         [HttpPost]
         public IActionResult AddAppointment([FromBody] Appointment appointment)
         {
             try
             {
+                // Kullanıcı ID'sini ayarla (sisteme giriş yapan kullanıcıdan alınır)
                 appointment.AppUserId = User.Claims.ToList()[1].Value;
+
+                // Randevu ID'sini oluştur
                 appointment.Id = Guid.NewGuid().ToString();
+
+                // Veritabanına kaydet
                 _context.Appointments.Add(appointment);
                 _context.SaveChanges();
-                return Json(new { success = true, message = "Appointment added successfully" });
+
+                // İlişkili veriyi al (Service Name gibi)
+                var service = _context.Services.FirstOrDefault(s => s.Id == appointment.ServiceId);
+
+                // JSON yanıtı döndür
+                return Json(new
+                {
+                    success = true,
+                    message = "Appointment added successfully",
+                    data = new
+                    {
+                        Id = appointment.Id,
+                        AppointmentDate = appointment.AppointmentDate.ToString("yyyy-MM-dd HH:mm"), // Tarih formatı
+                        ServiceName = service?.Name // Servis adı
+                    }
+                });
             }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+
 
         public IActionResult UpdateAppointment(string appointmentId)
 		{

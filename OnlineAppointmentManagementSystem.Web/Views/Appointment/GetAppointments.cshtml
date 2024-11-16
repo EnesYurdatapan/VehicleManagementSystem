@@ -1,60 +1,112 @@
 ﻿@model IEnumerable<Appointment>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<div class="card shadow border-0 mt-4">
-	<div class="card-header bg-secondary bg-gradient ml-0 py-3">
-		<div class="row">
-			<div class="col-12 text-center">
-				<h1 class="text-white">Appointments</h1>
-			</div>
-		</div>
-	</div>
-	<div class="card-body p-4">
-		<div class="row pb-3">
-			<div class="col-6">
-			</div>
-			<div class="col-6 text-end">
-				<a asp-action="AddAppointment" class="btn btn-outline-primary"><i class="bi bi-plus-square"></i> Create New Appointment</a>
+<div class="row">
+    <!-- Sol taraf: Form -->
+    <div class="col-md-4">
+        <h3 class="text-center">Add Appointment</h3>
+        <form id="addAppointmentForm">
+            <div class="mb-3">
+                <label for="ServiceId" class="form-label">Service</label>
+                <select id="ServiceId" class="form-select">
+                    <option disabled selected>--Select Service--</option>
+                    @foreach (var item in ViewBag.ServiceList as List<SelectListItem>)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="AppointmentDate" class="form-label">Appointment Date</label>
+                <input id="AppointmentDate" type="datetime-local" class="form-control" />
+            </div>
+            <button type="button" id="submitBtn" class="btn btn-primary">Add</button>
+        </form>
+    </div>
 
-			</div>
-		</div>
-		<table class="table">
-			<thead>
-				<tr>
-					<th>
-						Service
-					</th>
-					<th>
-						Date
-					</th>
-					<th>
-						
-					</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				@foreach (var item in Model)
-				{
-					<tr>
-						<td>
-							@item.Service.Name
-						</td>
-						<td>
-							@item.AppointmentDate
-						</td>
-						<td>
-							<a class="btn btn-success" asp-action="UpdateAppointment" asp-route-appointmentId="@item.Id">
-								<i class="bi bi-pencil-square"></i>
-							</a>
-							<a class="btn btn-danger" asp-action="DeleteAppointment" asp-route-appointmentId="@item.Id">
-								<i class="bi bi-trash"></i>
-							</a>
-						</td>
-					</tr>
-				}
-			</tbody>
-		</table>
-
-	</div>
-
+    <!-- Sağ taraf: Tablo -->
+    <div class="col-md-8">
+        <h3 class="text-center">Appointments</h3>
+        <table class="table" id="appointmentsTable">
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Service.Name</td>
+                        <td>@item.AppointmentDate</td>
+                        <td>
+                            <a class="btn btn-success" asp-action="UpdateAppointment" asp-route-appointmentId="@item.Id">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a class="btn btn-danger" asp-action="DeleteAppointment" asp-route-appointmentId="@item.Id">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<script>
+    $(document).ready(function () {
+        $('#submitBtn').on('click', function (e) {
+            e.preventDefault();
+
+            // Form verilerini topla
+            var appointmentData = {
+                ServiceId: $('#ServiceId').val(),
+                AppointmentDate: $('#AppointmentDate').val()
+            };
+
+            // AJAX isteği gönder
+            $.ajax({
+                url: '@Url.Action("AddAppointment", "Appointment")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(appointmentData),
+                success: function (response) {
+                    if (response.success) {
+                        // Yeni randevuyu tabloya ekle
+                        let newRow = `
+                                <tr>
+                                    <td>${response.data.serviceName}</td> <!-- Service Name -->
+                                    <td>${response.data.appointmentDate}</td> <!-- Appointment Date -->
+                                    <td>
+                                        <a class="btn btn-success" href="/Appointment/UpdateAppointment?appointmentId=${response.data.id}">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            `;
+
+                        $('#appointmentsTable tbody').append(newRow);
+
+                        // Formu temizle
+                        $('#ServiceId').val('');
+                        $('#AppointmentDate').val('');
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Hata: ", error);
+                }
+            });
+        });
+    });
+</script>
+
+
+
