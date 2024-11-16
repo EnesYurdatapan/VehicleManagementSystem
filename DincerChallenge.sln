@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34616.47
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{743F935B-07F1-4756-9AD8-6EBFABAAAF48}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{D9219E5A-3EDA-44C4-B966-1F59BE017900}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{FF9563D0-CA96-4C79-8FEA-134A51C09538}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineAppointmentManagementSystem.Web", "OnlineAppointmentManagementSystem.Web\OnlineAppointmentManagementSystem.Web.csproj", "{F61F2CAC-46D3-4220-B580-9677A0AC6F97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineAppointmentManagementSystem.Domain", "OnlineAppointmentManagementSystem.Domain\OnlineAppointmentManagementSystem.Domain.csproj", "{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineAppointmentManagementSystem.Application", "OnlineAppointmentManagementSystem.Application\OnlineAppointmentManagementSystem.Application.csproj", "{58EB8BA0-068A-40A3-AA6D-2EB89D80B168}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineAppointmentManagementSystem.Infrastructure", "OnlineAppointmentManagementSystem.Infrastructure\OnlineAppointmentManagementSystem.Infrastructure.csproj", "{DD9F3C93-BD6E-4F2F-9421-49956D7FC869}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineAppointmentManagementSystem.Persistance", "OnlineAppointmentManagementSystem.Persistance\OnlineAppointmentManagementSystem.Persistance.csproj", "{F904C72B-B594-415E-93A5-8819980C528A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F61F2CAC-46D3-4220-B580-9677A0AC6F97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F61F2CAC-46D3-4220-B580-9677A0AC6F97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F61F2CAC-46D3-4220-B580-9677A0AC6F97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F61F2CAC-46D3-4220-B580-9677A0AC6F97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{58EB8BA0-068A-40A3-AA6D-2EB89D80B168}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58EB8BA0-068A-40A3-AA6D-2EB89D80B168}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58EB8BA0-068A-40A3-AA6D-2EB89D80B168}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58EB8BA0-068A-40A3-AA6D-2EB89D80B168}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD9F3C93-BD6E-4F2F-9421-49956D7FC869}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD9F3C93-BD6E-4F2F-9421-49956D7FC869}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD9F3C93-BD6E-4F2F-9421-49956D7FC869}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD9F3C93-BD6E-4F2F-9421-49956D7FC869}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F904C72B-B594-415E-93A5-8819980C528A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F904C72B-B594-415E-93A5-8819980C528A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F904C72B-B594-415E-93A5-8819980C528A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F904C72B-B594-415E-93A5-8819980C528A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F61F2CAC-46D3-4220-B580-9677A0AC6F97} = {FF9563D0-CA96-4C79-8FEA-134A51C09538}
+		{ED48EFAF-DF04-4BA2-A68F-F68FA1C7BC85} = {743F935B-07F1-4756-9AD8-6EBFABAAAF48}
+		{58EB8BA0-068A-40A3-AA6D-2EB89D80B168} = {743F935B-07F1-4756-9AD8-6EBFABAAAF48}
+		{DD9F3C93-BD6E-4F2F-9421-49956D7FC869} = {D9219E5A-3EDA-44C4-B966-1F59BE017900}
+		{F904C72B-B594-415E-93A5-8819980C528A} = {D9219E5A-3EDA-44C4-B966-1F59BE017900}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {883948B1-C297-4A24-8E14-FF054B321EB7}
+	EndGlobalSection
+EndGlobal

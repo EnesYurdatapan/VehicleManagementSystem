@@ -1,0 +1,42 @@
+﻿@model Appointment
+
+<form asp-action="UpdateAppointment" enctype="multipart/form-data">
+    <br />
+    <div class="container border p-3">
+        <h1 class="text-white text-center">Edit Appointment</h1>
+        <input hidden asp-for="Id" />
+        <hr />
+        <div class="row">
+            <div class="col-10">
+                <div class="row">
+                    <div class="col-2">
+                        <label class="control-label pt-2" style="font-size:20px;"> Name</label>
+                    </div>
+                    <div class="col-10 pb-3">
+                        <select asp-for="ServiceId" class="form-select" asp-items="@ViewBag.ServiceList">
+                            <option disabled selected>--Select Service--</option>
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        <label class="control-label pt-2" style="font-size:20px;">Appointment Date</label>
+                    </div>
+                    <div class="col-10 pb-3">
+                        <input asp-for="AppointmentDate" type="datetime-local" value="@Model.AppointmentDate.ToLongDateString" class="form-control" />
+                    </div>
+                    <div class="col-10 pb-3">
+                        <input asp-for="AppUserId" value="@Model.AppUserId" class="form-control" hidden>
+                    </div>
+                    <div class="col-5 offset-2">
+
+                        <a asp-action="GetAppointments" class="btn-primary btn form-control ">Back to List</a>
+                    </div>
+                    <div class="col-5">
+                        <input type="submit" value="Update" class="btn btn-success form-control" />
+                    </div>
+
+                </div>
+            </div>
+       
+        </div>
+    </div>
+</form>

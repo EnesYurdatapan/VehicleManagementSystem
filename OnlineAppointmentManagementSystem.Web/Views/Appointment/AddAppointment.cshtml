@@ -1,0 +1,72 @@
+﻿<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<form id="addAppointmentForm">
+    <br />
+    <div class="container border p-3">
+        <h1 class="text-white text-center">Get an Appointment</h1>
+        <hr />
+        <div class="row">
+            <div class="col-10">
+                <div class="row">
+                    <div class="col-2">
+                        <label class="control-label pt-2" style="font-size:20px;">Service</label>
+                    </div>
+                    <div class="col-10 pb-3">
+                        <select id="ServiceId" class="form-select">
+                            <option disabled selected>--Select Service--</option>
+                            @foreach (var item in ViewBag.ServiceList as List<SelectListItem>)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        <label class="control-label pt-2" style="font-size:20px;">Appointment Date</label>
+                    </div>
+                    <div class="col-10 pb-3">
+                        <input id="AppointmentDate" type="datetime-local" class="form-control" />
+                    </div>
+                    <div class="col-5 offset-2">
+                        <a asp-action="GetAppointments" class="btn-primary btn form-control">Back to List</a>
+                    </div>
+                    <div class="col-5">
+                        <button type="button" id="submitBtn" class="btn btn-success form-control">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function () {
+        $('#submitBtn').on('click', function (e) {
+            e.preventDefault();
+
+            // Form verilerini topla
+            var appointmentData = {
+                ServiceId: $('#ServiceId').val(),
+                AppointmentDate: $('#AppointmentDate').val()
+            };
+
+            // AJAX isteği gönder
+            $.ajax({
+                url: '@Url.Action("AddAppointment", "Appointment")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(appointmentData),
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload(); // Sayfayı yenile veya listeyi güncelle
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Hata: ", error);
+                }
+            });
+        });
+    });
+</script>
