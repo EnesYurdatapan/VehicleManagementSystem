@@ -45,9 +45,9 @@
                             <button class="btn btn-success edit-btn" data-id="@item.Id">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <a class="btn btn-danger" asp-action="DeleteAppointment" asp-route-appointmentId="@item.Id">
+                            <button class="btn btn-danger delete-btn" data-id="@item.Id">
                                 <i class="bi bi-trash"></i>
-                            </a>
+                            </button>
                         </td>
                     </tr>
                 }
@@ -74,19 +74,19 @@
                 success: function (response) {
                     if (response.success) {
                         let newRow = `
-                                <tr id="row-${response.data.id}">
-                                    <td class="service-name">${response.data.serviceName}</td>
-                                    <td class="appointment-date">${response.data.appointmentDate}</td>
-                                    <td>
-                                        <button class="btn btn-success edit-btn" data-id="${response.data.id}">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            `;
+                                    <tr id="row-${response.data.id}">
+                                        <td class="service-name">${response.data.serviceName}</td>
+                                        <td class="appointment-date">${response.data.appointmentDate}</td>
+                                        <td>
+                                            <button class="btn btn-success edit-btn" data-id="${response.data.id}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                `;
                         $('#appointmentsTable tbody').append(newRow);
                         $('#ServiceId').val('');
                         $('#AppointmentDate').val('');
@@ -105,6 +105,14 @@
             var appointmentId = $(this).data('id');
             var row = $(`#row-${appointmentId}`);
 
+            // Orijinal değerleri sakla (iptal işlemi için, satıra özel saklama)
+            var originalService = row.find('.service-name').text();
+            var originalDate = row.find('.appointment-date').text();
+
+            // Bu değerleri satırda data-* özelliğinde sakla
+            row.data('originalService', originalService);
+            row.data('originalDate', originalDate);
+
             // AJAX ile düzenlenecek veriyi getir
             $.ajax({
                 url: '/Appointment/GetAppointmentById',
@@ -117,7 +125,7 @@
                                 <select class="form-select service-select">
     @foreach (var service in (List<SelectListItem>)ViewBag.ServiceList)
     {
-                                                <option value="@service.Value">@service.Text</option>
+                                            <option value="@service.Value">@service.Text</option>
     }
                                 </select>
                             `;
@@ -126,13 +134,43 @@
                                 <input type="datetime-local" class="form-control date-input" value="${response.data.appointmentDate}" />
                             `);
                         row.find('.edit-btn').remove();
-                        row.find('td:last-child').append(`<button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>`);
+                        row.find('td:last-child').append(`
+                            <button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>
+                            <button class="btn btn-secondary cancel-btn" data-id="${appointmentId}">Cancel</button>
+                        `);
                     } else {
                         alert(response.message);
                     }
                 }
             });
         });
+
+        $(document).on('click', '.cancel-btn', function () {
+            var appointmentId = $(this).data('id');
+            var row = $(`#row-${appointmentId}`);
+
+            // Saklanan orijinal değerleri geri al
+            var originalService = row.data('originalService');
+            var originalDate = row.data('originalDate');
+
+            console.log(originalService); // Orijinal servis adı
+            console.log(originalDate); // Orijinal tarih
+
+            // Hücreleri eski haline döndür
+            row.find('.service-name').text(originalService); // Orijinal servis adını geri getir
+            row.find('.appointment-date').text(originalDate); // Orijinal tarihi geri getir
+
+            // Save ve Cancel butonlarını kaldır, yerine Edit butonunu ekle
+            row.find('.save-btn').remove();
+            row.find('.cancel-btn').remove();
+            row.find('td:last-child').append(`
+                   <button class="btn btn-success edit-btn" data-id="${appointmentId}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+            `);
+        });
+
+
 
         // Kaydetme İşlemi
         $(document).on('click', '.save-btn', function () {
@@ -141,7 +179,7 @@
             var updatedData = {
                 Id: appointmentId,
                 ServiceId: row.find('.service-select').val(),
-                AppointmentDate: row.find('.date-input').val(), 
+                AppointmentDate: row.find('.date-input').val(),
             };
             console.log(updatedData);
 
@@ -158,8 +196,8 @@
                         row.find('.appointment-date').text(updatedData.AppointmentDate);
                         row.find('.save-btn').remove();
                         row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${appointmentId}">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>`);
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>`);
                     } else {
                         alert(response.message);
                     }
