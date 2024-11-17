@@ -9,14 +9,14 @@ using OnlineAppointmentManagementSystem.Web.Utility;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
 {
-	public class AppointmentController : Controller
-	{
-		private readonly AppointmentDbContext _context;
+    public class AppointmentController : Controller
+    {
+        private readonly AppointmentDbContext _context;
 
-		public AppointmentController(AppointmentDbContext context)
-		{
-			_context = context;
-		}
+        public AppointmentController(AppointmentDbContext context)
+        {
+            _context = context;
+        }
 
         public IActionResult GetAppointments()
         {
@@ -93,38 +93,81 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
 
 
-        public IActionResult UpdateAppointment(string appointmentId)
-		{
-			var services = _context.Services.ToList();
-			List<SelectListItem> serviceList = services.Select(service => new SelectListItem
-			{
-				Text = service.Name,
-				Value = service.Id // veya farklı bir değer kullanabilirsiniz
-			}).ToList();
+        //      public IActionResult UpdateAppointment(string appointmentId)
+        //{
+        //	var services = _context.Services.ToList();
+        //	List<SelectListItem> serviceList = services.Select(service => new SelectListItem
+        //	{
+        //		Text = service.Name,
+        //		Value = service.Id // veya farklı bir değer kullanabilirsiniz
+        //	}).ToList();
 
-			ViewBag.ServiceList = serviceList;
+        //	ViewBag.ServiceList = serviceList;
 
-			var result = _context.Appointments.FirstOrDefault(a=>a.Id==appointmentId);
-			return View(result);
-		}
-		[HttpPost]
-		public IActionResult UpdateAppointment(Appointment appointment)
-		{
-			_context.Appointments.Update(appointment);
-			_context.SaveChanges();
-			return RedirectToAction(nameof(GetAppointments));
-		}
-		public IActionResult DeleteAppointment(string appointmentId)
-		{
-			var result = _context.Appointments.Find(appointmentId);
-			return View(result);
-		}
-		[HttpPost]
-		public IActionResult DeleteAppointment(Appointment appointment)
-		{
-			_context.Appointments.Remove(appointment);
-			_context.SaveChanges();
-			return RedirectToAction(nameof(GetAppointments));
-		}
-	}
+        //	var result = _context.Appointments.FirstOrDefault(a=>a.Id==appointmentId);
+        //	return View(result);
+        //}
+        //[HttpPost]
+        //public IActionResult UpdateAppointment(Appointment appointment)
+        //{
+        //	_context.Appointments.Update(appointment);
+        //	_context.SaveChanges();
+        //	return RedirectToAction(nameof(GetAppointments));
+        //}
+        public IActionResult DeleteAppointment(string appointmentId)
+        {
+            var result = _context.Appointments.Find(appointmentId);
+            return View(result);
+        }
+        [HttpPost]
+        public IActionResult DeleteAppointment(Appointment appointment)
+        {
+            _context.Appointments.Remove(appointment);
+            _context.SaveChanges();
+            return RedirectToAction(nameof(GetAppointments));
+        }
+        [HttpGet]
+        public IActionResult GetAppointmentById(string appointmentId)
+        {
+            var appointment = _context.Appointments
+                .Include(a => a.Service)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appointment == null)
+            {
+                return Json(new { success = false, message = "Appointment not found." });
+            }
+
+            return Json(new
+            {
+                success = true,
+                data = new
+                {
+                    AppointmentId = appointment.Id,
+                    AppointmentDate = appointment.AppointmentDate,
+                    ServiceId = appointment.ServiceId,
+                    ServiceName = appointment.Service.Name
+                }
+            });
+        }
+
+        [HttpPost]
+        public IActionResult UpdateAppointment([FromBody]Appointment appointment)
+        {
+            var existingAppointment = _context.Appointments.FirstOrDefault(a => a.Id == appointment.Id);
+
+            if (existingAppointment == null)
+            {
+                return Json(new { success = false, message = "Appointment not found." });
+            }
+
+            existingAppointment.ServiceId = appointment.ServiceId;
+            existingAppointment.AppointmentDate = appointment.AppointmentDate;
+
+            _context.SaveChanges();
+            return Json(new { success = true, message = "Appointment updated successfully." });
+        }
+
+
+    }
 }

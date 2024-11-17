@@ -38,13 +38,13 @@
             <tbody>
                 @foreach (var item in Model)
                 {
-                    <tr>
-                        <td>@item.Service.Name</td>
-                        <td>@item.AppointmentDate</td>
+                    <tr id="row-@item.Id">
+                        <td class="service-name">@item.Service.Name</td>
+                        <td class="appointment-date">@item.AppointmentDate</td>
                         <td>
-                            <a class="btn btn-success" asp-action="UpdateAppointment" asp-route-appointmentId="@item.Id">
+                            <button class="btn btn-success edit-btn" data-id="@item.Id">
                                 <i class="bi bi-pencil-square"></i>
-                            </a>
+                            </button>
                             <a class="btn btn-danger" asp-action="DeleteAppointment" asp-route-appointmentId="@item.Id">
                                 <i class="bi bi-trash"></i>
                             </a>
@@ -52,22 +52,20 @@
                     </tr>
                 }
             </tbody>
+
         </table>
     </div>
 </div>
 
 <script>
     $(document).ready(function () {
+        // Randevu Ekleme (zaten mevcut)
         $('#submitBtn').on('click', function (e) {
             e.preventDefault();
-
-            // Form verilerini topla
             var appointmentData = {
                 ServiceId: $('#ServiceId').val(),
                 AppointmentDate: $('#AppointmentDate').val()
             };
-
-            // AJAX isteği gönder
             $.ajax({
                 url: '@Url.Action("AddAppointment", "Appointment")',
                 type: 'POST',
@@ -75,25 +73,21 @@
                 data: JSON.stringify(appointmentData),
                 success: function (response) {
                     if (response.success) {
-                        // Yeni randevuyu tabloya ekle
                         let newRow = `
-                                <tr>
-                                    <td>${response.data.serviceName}</td> <!-- Service Name -->
-                                    <td>${response.data.appointmentDate}</td> <!-- Appointment Date -->
+                                <tr id="row-${response.data.id}">
+                                    <td class="service-name">${response.data.serviceName}</td>
+                                    <td class="appointment-date">${response.data.appointmentDate}</td>
                                     <td>
-                                        <a class="btn btn-success" href="/Appointment/UpdateAppointment?appointmentId=${response.data.id}">
+                                        <button class="btn btn-success edit-btn" data-id="${response.data.id}">
                                             <i class="bi bi-pencil-square"></i>
-                                        </a>
+                                        </button>
                                         <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </td>
                                 </tr>
                             `;
-
                         $('#appointmentsTable tbody').append(newRow);
-
-                        // Formu temizle
                         $('#ServiceId').val('');
                         $('#AppointmentDate').val('');
                     } else {
@@ -105,7 +99,75 @@
                 }
             });
         });
+
+        // Düzenleme Başlatma
+        $(document).on('click', '.edit-btn', function () {
+            var appointmentId = $(this).data('id');
+            var row = $(`#row-${appointmentId}`);
+
+            // AJAX ile düzenlenecek veriyi getir
+            $.ajax({
+                url: '/Appointment/GetAppointmentById',
+                type: 'GET',
+                data: { appointmentId: appointmentId },
+                success: function (response) {
+                    if (response.success) {
+                        // Mevcut hücreleri düzenlenebilir alanlara çevir
+                        var serviceOptions = `
+                                <select class="form-select service-select">
+    @foreach (var service in (List<SelectListItem>)ViewBag.ServiceList)
+    {
+                                                <option value="@service.Value">@service.Text</option>
+    }
+                                </select>
+                            `;
+                        row.find('.service-name').html(serviceOptions);
+                        row.find('.appointment-date').html(`
+                                <input type="datetime-local" class="form-control date-input" value="${response.data.appointmentDate}" />
+                            `);
+                        row.find('.edit-btn').remove();
+                        row.find('td:last-child').append(`<button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>`);
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        });
+
+        // Kaydetme İşlemi
+        $(document).on('click', '.save-btn', function () {
+            var appointmentId = $(this).data('id');
+            var row = $(`#row-${appointmentId}`);
+            var updatedData = {
+                Id: appointmentId,
+                ServiceId: row.find('.service-select').val(),
+                AppointmentDate: row.find('.date-input').val(), 
+            };
+            console.log(updatedData);
+
+            // AJAX ile veriyi güncelle
+            $.ajax({
+                url: '@Url.Action("UpdateAppointment", "Appointment")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(updatedData),
+                success: function (response) {
+                    if (response.success) {
+                        var selectedServiceName = row.find('.service-select option:selected').text();
+                        row.find('.service-name').text(selectedServiceName);
+                        row.find('.appointment-date').text(updatedData.AppointmentDate);
+                        row.find('.save-btn').remove();
+                        row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${appointmentId}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>`);
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        });
     });
+
 </script>
 
 

@@ -11,6 +11,6 @@ namespace OnlineAppointmentManagementSystem.Web.Models
         public string AppUserId { get; set; }
         public DateTime AppointmentDate { get; set; }
         public Service Service { get; set; }
-        public AppUser AppUser { get; set; }
+        public AppUser AppUser { get; set; } 
     }
 }
