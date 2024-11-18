@@ -1,28 +1,33 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using OnlineAppointmentManagementSystem.Web.Context;
-using OnlineAppointmentManagementSystem.Web.Models;
-using OnlineAppointmentManagementSystem.Web.Models.Dto;
-using OnlineAppointmentManagementSystem.Web.Utility;
+using OnlineAppointmentManagementSystem.Application.Abstraction.Services;
+using OnlineAppointmentManagementSystem.Application.DTOs;
+using OnlineAppointmentManagementSystem.Domain.Entities;
+using OnlineAppointmentManagementSystem.Infrastructure.Utility;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
 {
     public class AppointmentController : Controller
     {
-        private readonly AppointmentDbContext _context;
+        private readonly IAppointmentService _appointmentService;
+        private readonly IServiceManager _serviceManager;
 
-        public AppointmentController(AppointmentDbContext context)
+        public AppointmentController(IAppointmentService appointmentService, IServiceManager serviceManager)
         {
-            _context = context;
+            _appointmentService = appointmentService;
+            _serviceManager = serviceManager;
         }
+
+
         [Authorize(Roles = StaticDetails.RoleCustomer)]
-        public IActionResult GetAppointments()
+        public async Task<IActionResult> GetAppointments()
         {
-            var appointments = _context.Appointments.Include(a => a.Service).Where(a => a.AppUserId == User.Claims.ToList()[1].Value).ToList();
-            var services = _context.Services.ToList();
+            var appointments =  _appointmentService.GetAllAppointments().Result.Where(a => a.AppUserId == User.Claims.ToList()[1].Value).ToList();
+            var services = await _serviceManager.GetAllServices();
 
             List<SelectListItem> serviceList = services.Select(service => new SelectListItem
             {
@@ -35,11 +40,10 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
             return View(appointments);
         }
         [Authorize(Roles = StaticDetails.RoleAdmin)]
-        public IActionResult GetAppointmentsForAdmin()
+        public async Task<IActionResult> GetAppointmentsForAdmin()
         {
-            var appointments = _context.Appointments.Include(a => a.Service).Include(a=>a.AppUser).ToList();
-            var services = _context.Services.ToList();
-
+            var appointments = await _appointmentService.GetAllAppointments();
+            var services = await _serviceManager.GetAllServices();
             var statusList = new List<SelectListItem>()
             {
                 new SelectListItem{Text=StaticDetails.Waiting, Value=StaticDetails.Waiting},
@@ -54,33 +58,21 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddAppointment([FromBody] Appointment appointment)
+        public async Task<IActionResult> AddAppointment([FromBody] AppointmentDto appointmentDto)
         {
             try
             {
-                // Kullanıcı ID'sini ayarla (sisteme giriş yapan kullanıcıdan alınır)
-                appointment.AppUserId = User.Claims.ToList()[1].Value;
-
-                // Randevu ID'sini oluştur
-                appointment.Id = Guid.NewGuid().ToString();
-
-                // Veritabanına kaydet
-                _context.Appointments.Add(appointment);
-                _context.SaveChanges();
-
-                // İlişkili veriyi al (Service Name gibi)
-                var service = _context.Services.FirstOrDefault(s => s.Id == appointment.ServiceId);
-
-                // JSON yanıtı döndür
+                appointmentDto.AppUserId = User.Claims.ToList()[1].Value;
+                var result = await _appointmentService.AddAppointment(appointmentDto);
                 return Json(new
                 {
                     success = true,
                     message = "Appointment added successfully",
                     data = new
                     {
-                        Id = appointment.Id,
-                        AppointmentDate = appointment.AppointmentDate.ToString("yyyy-MM-dd HH:mm"), // Tarih formatı
-                        ServiceName = service?.Name // Servis adı
+                        Id = appointmentDto.Id,
+                        AppointmentDate = appointmentDto.AppointmentDate.ToString("yyyy-MM-dd HH:mm"), 
+                        ServiceName = appointmentDto.ServiceName 
                     }
                 });
             }
@@ -91,15 +83,13 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
 
 
-        
+
         [HttpPost]
-        public IActionResult DeleteAppointment(string appointmentId)
+        public async Task<IActionResult> DeleteAppointment(string appointmentId)
         {
-            var appointment = _context.Appointments.Find(appointmentId);
-            if (appointment != null)
+            var result = await _appointmentService.DeleteAppointment(appointmentId);
+            if (result != false)
             {
-                _context.Appointments.Remove(appointment);
-                _context.SaveChanges();
                 return Json(new { success = true, message = "Appointment deleted successfully." });
             }
             return Json(new { success = false, message = "Appointment not found." });
@@ -107,11 +97,10 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
 
         [HttpGet]
-        public IActionResult GetAppointmentById(string appointmentId)
+        public async Task<IActionResult> GetAppointmentById(string appointmentId)
         {
-            var appointment = _context.Appointments
-                .Include(a => a.Service)
-                .FirstOrDefault(a => a.Id == appointmentId);
+            var appointment = await _appointmentService.GetAppointmentById(appointmentId);
+            var service = await _serviceManager.GetById(appointment.ServiceId);
 
             if (appointment == null)
             {
@@ -126,26 +115,22 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
                     AppointmentId = appointment.Id,
                     AppointmentDate = appointment.AppointmentDate,
                     ServiceId = appointment.ServiceId,
-                    ServiceName = appointment.Service.Name
+                    ServiceName = service.Name
                 }
             });
         }
 
 
         [HttpPost]
-        public IActionResult UpdateAppointment([FromBody]Appointment appointment)
+        public async Task<IActionResult> UpdateAppointment([FromBody] AppointmentDto appointmentDto)
         {
-            var existingAppointment = _context.Appointments.FirstOrDefault(a => a.Id == appointment.Id);
+            var result = await _appointmentService.UpdateAppointment(appointmentDto);
 
-            if (existingAppointment == null)
+            if (result == false)
             {
                 return Json(new { success = false, message = "Appointment not found." });
             }
 
-            existingAppointment.ServiceId = appointment.ServiceId;
-            existingAppointment.AppointmentDate = appointment.AppointmentDate;
-
-            _context.SaveChanges();
             return Json(new { success = true, message = "Appointment updated successfully." });
         }
 
@@ -153,15 +138,13 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         public async Task<IActionResult> ChangeStatusOfAppointment([FromBody] Appointment appointment)
         {
 
-            var existingAppointment = _context.Appointments.FirstOrDefault(a => a.Id == appointment.Id);
-
-            if (existingAppointment == null)
+            var result = await _appointmentService.ChangeStatusOfAppointment(appointment);
+            if (result == false)
             {
                 return Json(new { success = false, message = "Appointment not found." });
             }
 
-            existingAppointment.Status = appointment.Status;
-            _context.SaveChangesAsync();
+
             return Json(new { success = true, message = "Appointment updated successfully." });
         }
 

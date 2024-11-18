@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Appointment>
+﻿@model IEnumerable<OnlineAppointmentManagementSystem.Domain.Entities.Appointment>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <div class="row">
@@ -7,6 +7,7 @@
         <h3 class="text-center">Add Appointment</h3>
         <form id="addAppointmentForm">
             <div class="mb-3">
+                <input id="Id" type="text" value="@Guid.NewGuid()" class="form-control" hidden/>
                 <label for="ServiceId" class="form-label">Service</label>
                 <select id="ServiceId" class="form-select">
                     <option disabled selected>--Select Service--</option>
@@ -59,10 +60,11 @@
 
 <script>
     $(document).ready(function () {
-        // Randevu Ekleme (zaten mevcut)
+        // Randevu Ekleme 
         $('#submitBtn').on('click', function (e) {
             e.preventDefault();
             var appointmentData = {
+                Id:$('#Id').val(),
                 ServiceId: $('#ServiceId').val(),
                 AppointmentDate: $('#AppointmentDate').val()
             };
@@ -90,8 +92,9 @@
                         $('#appointmentsTable tbody').append(newRow);
                         $('#ServiceId').val('');
                         $('#AppointmentDate').val('');
+                        toastr.success(response.message);
                     } else {
-                        alert(response.message);
+                        toastr.error(response.message)
                     }
                 },
                 error: function (xhr, status, error) {
@@ -104,7 +107,6 @@
         $(document).on('click', '.edit-btn', function () {
             var appointmentId = $(this).data('id');
             var row = $(`#row-${appointmentId}`);
-
             // Orijinal değerleri sakla (iptal işlemi için, satıra özel saklama)
             var originalService = row.find('.service-name').text();
             var originalDate = row.find('.appointment-date').text();
@@ -207,8 +209,9 @@
                         row.find('td:last-child').append(` <button class="btn btn-danger delete-btn" data-id="${appointmentId}">
                                                             <i class="bi bi-trash"></i>
                                                         </button>`);
+                        toastr.success(response.message)
                     } else {
-                        alert(response.message);
+                        toastr.error(response.message)
                     }
                 }
             });
@@ -216,40 +219,39 @@
 
         // Silme
         $(document).on('click', '.delete-btn', function (e) {
-            e.preventDefault(); // Default davranışı engelle (gereksiz yönlendirme olmaması için)
+            e.preventDefault(); 
 
-            var appointmentId = $(this).data('id'); // ID'yi al
-            var row = $(`#row-${appointmentId}`); // Satırı hedefle
+            var appointmentId = $(this).data('id'); 
+            var row = $(`#row-${appointmentId}`); 
 
-            // Kullanıcıdan onay al
+           
             if (confirm("Silmek istediğinize emin misiniz?")) {
-                // AJAX ile silme isteği gönder
+            
                 $.ajax({
                     url: '/Appointment/DeleteAppointment',
                     type: 'POST',
                     data: { appointmentId: appointmentId },
                     success: function (response) {
                         if (response.success) {
-                            // Satırı tablodan kaldır
+                         
                             row.remove();
-                            alert(response.message);
+                            toastr.success(response.message)
                         } else {
-                            alert(response.message);
+                            toastr.error(response.message)
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error("Hata: ", error);
-                        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                        toastr.error("Bir hata oluştu. Lütfen tekrar deneyin.");
                     }
                 });
             } else {
-                // Kullanıcı Hayır'ı seçti
+                
                 alert("Silme işlemi iptal edildi.");
             }
         });
     });
 
-    // Silme
+   
 
 
 </script>

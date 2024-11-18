@@ -63,7 +63,12 @@
                     data: JSON.stringify(formData),
                     success: function (response) {
                         $('#registerMessage').html('<div class="alert alert-success">Registration successful!</div>');
-                        $('#Email, #Name, #PhoneNumber, #Password, #Role').val(''); // Formu sıfırla
+                        toastr.success("Registration is success !! You'll redirect to Login page")
+                        // $('#Email, #Name, #PhoneNumber, #Password').val('');
+                        setTimeout(function () {
+                            window.location.href = '/Auth/Login'; // Giriş sonrası yönlendirme
+                        }, 2000);
+
                     },
                     error: function (xhr, status, error) {
                         $('#registerMessage').html('<div class="alert alert-danger">An error occurred: ' + xhr.responseText + '</div>');

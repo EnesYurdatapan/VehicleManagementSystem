@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Appointment>
+﻿@model IEnumerable<OnlineAppointmentManagementSystem.Domain.Entities.Appointment>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <div class="container d-flex justify-content-center align-items-center min-vh-100">
@@ -123,9 +123,9 @@
                     row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${appointmentId}">
                                                                 Change Status</i>
                                                             </button>`);
-                    
+                    toastr.success(response.message)
                 } else {
-                    alert(response.message);
+                    toastr.error(response.message)
                 }
             }
         });

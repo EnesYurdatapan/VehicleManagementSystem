@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
-using OnlineAppointmentManagementSystem.Web.Models.Dto;
-using OnlineAppointmentManagementSystem.Web.Utility;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using OnlineAppointmentManagementSystem.Web.Services.Abstract;
+using OnlineAppointmentManagementSystem.Infrastructure.Utility;
+using OnlineAppointmentManagementSystem.Application.Abstraction.Services;
+using OnlineAppointmentManagementSystem.Application.Abstraction.Token;
+using OnlineAppointmentManagementSystem.Application.DTOs;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
 {
@@ -92,6 +93,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
                 // Kullanıcının rolünü tespit et ve Session/Claim ile sakla
                 var role = response.User.Role; // response içindeki role bilgisini alın
+
                 HttpContext.Session.SetString("UserRole", role);
 
                 // Role'e göre yönlendirme

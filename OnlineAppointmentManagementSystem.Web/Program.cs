@@ -1,34 +1,22 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using OnlineAppointmentManagementSystem.Web.Context;
-using OnlineAppointmentManagementSystem.Web.Extensions;
-using OnlineAppointmentManagementSystem.Web.Models;
-using OnlineAppointmentManagementSystem.Web.Services.Abstract;
-using OnlineAppointmentManagementSystem.Web.Services.Concrete;
-using System;
-using System.Security.Claims;
+using OnlineAppointmentManagementSystem.Application.DTOs;
 using System.Text;
+using OnlineAppointmentManagementSystem.Persistance;
+using OnlineAppointmentManagementSystem.Infrastructure;
+using OnlineAppointmentManagementSystem.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddDbContext<AppointmentDbContext>(option =>
-{
-    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JwtOptions"));
-builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<AppointmentDbContext>().AddDefaultTokenProviders();
 
+builder.Services.AddPersistanceServices();
+builder.Services.AddInfrastructureServices();
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddScoped<IAuthService,AuthService>();
-builder.Services.AddScoped<IJwtTokenGenerator,JwtTokenGenerator>();
-builder.Services.AddScoped<ITokenProvider,TokenProvider>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -64,7 +52,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);//We set Time here 
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 
 
@@ -82,7 +75,7 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

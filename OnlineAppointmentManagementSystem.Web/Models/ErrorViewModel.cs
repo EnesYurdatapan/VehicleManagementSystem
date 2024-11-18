@@ -1,4 +1,4 @@
-namespace OnlineAppointmentManagementSystem.Web.Models
+﻿namespace OnlineAppointmentManagementSystem.Web.Models
 {
     public class ErrorViewModel
     {

@@ -3,30 +3,30 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using OnlineAppointmentManagementSystem.Web.Context;
-using OnlineAppointmentManagementSystem.Web.Models;
-using OnlineAppointmentManagementSystem.Web.Models.Dto;
-using OnlineAppointmentManagementSystem.Web.Services.Abstract;
-using OnlineAppointmentManagementSystem.Web.Utility;
+using OnlineAppointmentManagementSystem.Application.Abstraction.Services;
+using OnlineAppointmentManagementSystem.Application.DTOs;
+using OnlineAppointmentManagementSystem.Domain.Entities.Identity;
+using OnlineAppointmentManagementSystem.Infrastructure.Utility;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
 {
     public class UserController : Controller
     {
         private readonly IAuthService _authService;
-        private readonly AppointmentDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IAppointmentService _appointmentService;
 
-        public UserController(IAuthService authService, AppointmentDbContext context, UserManager<AppUser> userManager)
+        public UserController(IAuthService authService, UserManager<AppUser> userManager, IAppointmentService appointmentService)
         {
             _authService = authService;
-            _context = context;
             _userManager = userManager;
+            _appointmentService = appointmentService;
         }
+
         [Authorize(Roles = StaticDetails.RoleAdmin)]
         public IActionResult Users()
         {
-            var users = _context.Users.ToList();
+            var users = _userManager.Users.ToList();
             var usersToModel = new List<RegistrationRequestDto>();
             foreach (var user in users)
             {
@@ -91,11 +91,10 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         [HttpPost]
         public IActionResult DeleteUser(string userId)
         {
-            var user = _context.AppUsers.Find(userId);
+            var user = _userManager.Users.FirstOrDefault(u=>u.Id==userId);
             if (user != null)
             {
-                _context.AppUsers.Remove(user);
-                _context.SaveChanges();
+                _userManager.DeleteAsync(user);
                 return Json(new { success = true, message = "user deleted successfully." });
             }
             return Json(new { success = false, message = "user not found." });
@@ -104,7 +103,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         [HttpGet]
         public IActionResult GetUserById(string userId)
         {
-            var user = _context.AppUsers
+            var user = _userManager.Users
                 .FirstOrDefault(u => u.Id == userId);
             var role = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
 
@@ -131,8 +130,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
             await _authService.AssignRole(registrationRequestDto.Email, registrationRequestDto.Role);
 
-            _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Appointment updated successfully." });
+            return Json(new { success = true, message = "User Role updated successfully." });
         }
     }
 }

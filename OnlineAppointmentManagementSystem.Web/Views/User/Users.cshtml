@@ -1,4 +1,4 @@
-﻿@model IEnumerable<OnlineAppointmentManagementSystem.Web.Models.Dto.RegistrationRequestDto>
+﻿@model IEnumerable<OnlineAppointmentManagementSystem.Application.DTOs.RegistrationRequestDto>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <div class="row">
@@ -120,13 +120,13 @@
                         $('#PhoneNumber').val('');
                         $('#Password').val('');
                         $('#Role').val('');
-
+                        toastr.success(response.message)
                     } else {
-                        alert(response.message);
+                        toastr.error(response.message)
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error("Hata: ", error);
+                    toastr.error("Hata: ", error)
                 }
             });
         });
@@ -150,19 +150,19 @@
                         if (response.success) {
                             // Satırı tablodan kaldır
                             row.remove();
-                            alert(response.message);
+                            toastr.success(response.message)
                         } else {
-                            alert(response.message);
+                            toastr.success(response.message)
                         }
                     },
                     error: function (xhr, status, error) {
                         console.error("Hata: ", error);
-                        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                        toastr.error("Bir hata oluştu. Lütfen tekrar deneyin.");
                     }
                 });
             } else {
                 // Kullanıcı Hayır'ı seçti
-                alert("Silme işlemi iptal edildi.");
+                toastr.error("Silme işlemi iptal edildi.")
             }
         });
 
@@ -171,7 +171,7 @@
         $(document).on('click', '.edit-btn', function () {
             var userId = $(this).data('id');
             var row = $(`#list-${userId}`);
-
+            console.log(userId);
             // Orijinal değerleri sakla (iptal işlemi için, satıra özel saklama)
             var originalRole = row.find('.user-role').text();
 
@@ -265,8 +265,9 @@
                         row.find('td:last-child').append(` <button class="btn btn-danger delete-btn" data-id="${userId}">
                                                         <i class="bi bi-trash"></i>
                                                     </button>`);
+                        toastr.success(response.message)
                     } else {
-                        alert(response.message);
+                        toastr.error(response.message)
                     }
                 }
             });

@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace OnlineAppointmentManagementSystem.Domain.Entities.Identity
 {
-    public class AppUser:IdentityUser<string>
+    public class AppUser:IdentityUser
     {
+        public string Name { get; set; }
     }
 }

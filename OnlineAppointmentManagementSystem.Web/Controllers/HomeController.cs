@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OnlineAppointmentManagementSystem.Web.Models;
-using OnlineAppointmentManagementSystem.Web.Utility;
+using OnlineAppointmentManagementSystem.Application.DTOs;
+using OnlineAppointmentManagementSystem.Infrastructure.Utility;
 using System.Diagnostics;
 using System.Security.Claims;
 

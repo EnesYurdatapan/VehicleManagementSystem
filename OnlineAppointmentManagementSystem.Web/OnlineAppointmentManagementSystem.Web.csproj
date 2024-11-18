@@ -19,5 +19,11 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\OnlineAppointmentManagementSystem.Application\OnlineAppointmentManagementSystem.Application.csproj" />
+	  <ProjectReference Include="..\OnlineAppointmentManagementSystem.Infrastructure\OnlineAppointmentManagementSystem.Infrastructure.csproj" />
+	  <ProjectReference Include="..\OnlineAppointmentManagementSystem.Persistance\OnlineAppointmentManagementSystem.Persistance.csproj" />
+	</ItemGroup>
 	
 </Project>
