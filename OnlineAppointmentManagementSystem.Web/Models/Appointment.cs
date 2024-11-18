@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using OnlineAppointmentManagementSystem.Web.Utility;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OnlineAppointmentManagementSystem.Web.Models
 {
@@ -11,6 +12,7 @@ namespace OnlineAppointmentManagementSystem.Web.Models
         public string AppUserId { get; set; }
         public DateTime AppointmentDate { get; set; }
         public Service Service { get; set; }
-        public AppUser AppUser { get; set; } 
+        public AppUser AppUser { get; set; }
+        public string Status { get; set; } = StaticDetails.Waiting;
     }
 }

@@ -124,5 +124,9 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
     }
 }

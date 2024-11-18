@@ -26,16 +26,34 @@ namespace OnlineAppointmentManagementSystem.Web.Services.Concrete
         public async Task<bool> AssignRole(string email, string roleName)
         {
             var user = await _appointmentDbContext.AppUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            var roleToDelete = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
+            if (roleToDelete == null)
+            {
             if (user != null)
             {
                 if (!_roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
                 {
                     await _roleManager.CreateAsync(new IdentityRole(roleName));
                 }
-                await _userManager.AddToRoleAsync(user, roleName);
+                    try
+                    {
+                        var result = await _userManager.AddToRoleAsync(user, roleName);
+                    }
+                    catch (Exception ex)
+                    {
+
+                        throw;
+                    }
+                
                 return true;
             }
-            return false;
+            }
+            else
+            {
+                await _userManager.RemoveFromRoleAsync(user, roleToDelete);
+                await _userManager.AddToRoleAsync(user, roleName);
+            }
+            return true;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginRequestDto loginRequestDto)
@@ -73,6 +91,7 @@ namespace OnlineAppointmentManagementSystem.Web.Services.Concrete
         {
             AppUser user = new()
             {
+                //Id = registerationRequestDto.Id,
                 UserName = registerationRequestDto.Email,
                 Email = registerationRequestDto.Email,
                 NormalizedEmail = registerationRequestDto.Email.ToUpper(),
@@ -84,7 +103,7 @@ namespace OnlineAppointmentManagementSystem.Web.Services.Concrete
                 var result = await _userManager.CreateAsync(user, registerationRequestDto.Password);
                 if (result.Succeeded)
                 {
-                    var userToReturn = _appointmentDbContext.AppUsers.First(u => u.UserName == registerationRequestDto.Email);
+                    var userToReturn = _appointmentDbContext.AppUsers.AsNoTracking().First(u => u.UserName == registerationRequestDto.Email);
 
                     UserDto userDto = new()
                     {

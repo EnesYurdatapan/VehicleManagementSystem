@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using OnlineAppointmentManagementSystem.Web.Context;
 using OnlineAppointmentManagementSystem.Web.Models;
+using OnlineAppointmentManagementSystem.Web.Models.Dto;
 using OnlineAppointmentManagementSystem.Web.Utility;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
@@ -17,7 +18,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         {
             _context = context;
         }
-
+        [Authorize(Roles = StaticDetails.RoleCustomer)]
         public IActionResult GetAppointments()
         {
             var appointments = _context.Appointments.Include(a => a.Service).Where(a => a.AppUserId == User.Claims.ToList()[1].Value).ToList();
@@ -33,27 +34,25 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
             return View(appointments);
         }
+        [Authorize(Roles = StaticDetails.RoleAdmin)]
+        public IActionResult GetAppointmentsForAdmin()
+        {
+            var appointments = _context.Appointments.Include(a => a.Service).Include(a=>a.AppUser).ToList();
+            var services = _context.Services.ToList();
 
+            var statusList = new List<SelectListItem>()
+            {
+                new SelectListItem{Text=StaticDetails.Waiting, Value=StaticDetails.Waiting},
+                new SelectListItem{Text=StaticDetails.Accepted, Value=StaticDetails.Accepted},
+                new SelectListItem{Text=StaticDetails.Completed, Value=StaticDetails.Completed},
+                new SelectListItem{Text=StaticDetails.Canceled, Value=StaticDetails.Canceled},
+            };
 
-        //[Authorize]
-        //public IActionResult GetAppointments()
-        //{
-        //	//var appointments = _context.Appointments.Include(a=>a.Service).Where(a => a.UserId == User.Claims.ToList()[1].Value).ToList();
-        //	var appointments = _context.Appointments.Include(a => a.Service).ToList();
-        //	return View(appointments);
-        //}
-        //      public IActionResult AddAppointment()
-        //{
-        //	var services = _context.Services.ToList();
-        //	List<SelectListItem> serviceList = services.Select(service => new SelectListItem
-        //	{
-        //		Text = service.Name,
-        //		Value = service.Id // veya farklı bir değer kullanabilirsiniz
-        //	}).ToList();
+            ViewBag.StatusList = statusList;
 
-        //	ViewBag.ServiceList = serviceList;
-        //	return View();
-        //}
+            return View(appointments);
+        }
+
         [HttpPost]
         public IActionResult AddAppointment([FromBody] Appointment appointment)
         {
@@ -92,40 +91,21 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
 
 
-
-        //      public IActionResult UpdateAppointment(string appointmentId)
-        //{
-        //	var services = _context.Services.ToList();
-        //	List<SelectListItem> serviceList = services.Select(service => new SelectListItem
-        //	{
-        //		Text = service.Name,
-        //		Value = service.Id // veya farklı bir değer kullanabilirsiniz
-        //	}).ToList();
-
-        //	ViewBag.ServiceList = serviceList;
-
-        //	var result = _context.Appointments.FirstOrDefault(a=>a.Id==appointmentId);
-        //	return View(result);
-        //}
-        //[HttpPost]
-        //public IActionResult UpdateAppointment(Appointment appointment)
-        //{
-        //	_context.Appointments.Update(appointment);
-        //	_context.SaveChanges();
-        //	return RedirectToAction(nameof(GetAppointments));
-        //}
+        
+        [HttpPost]
         public IActionResult DeleteAppointment(string appointmentId)
         {
-            var result = _context.Appointments.Find(appointmentId);
-            return View(result);
+            var appointment = _context.Appointments.Find(appointmentId);
+            if (appointment != null)
+            {
+                _context.Appointments.Remove(appointment);
+                _context.SaveChanges();
+                return Json(new { success = true, message = "Appointment deleted successfully." });
+            }
+            return Json(new { success = false, message = "Appointment not found." });
         }
-        [HttpPost]
-        public IActionResult DeleteAppointment(Appointment appointment)
-        {
-            _context.Appointments.Remove(appointment);
-            _context.SaveChanges();
-            return RedirectToAction(nameof(GetAppointments));
-        }
+
+
         [HttpGet]
         public IActionResult GetAppointmentById(string appointmentId)
         {
@@ -151,6 +131,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
             });
         }
 
+
         [HttpPost]
         public IActionResult UpdateAppointment([FromBody]Appointment appointment)
         {
@@ -165,6 +146,22 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
             existingAppointment.AppointmentDate = appointment.AppointmentDate;
 
             _context.SaveChanges();
+            return Json(new { success = true, message = "Appointment updated successfully." });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangeStatusOfAppointment([FromBody] Appointment appointment)
+        {
+
+            var existingAppointment = _context.Appointments.FirstOrDefault(a => a.Id == appointment.Id);
+
+            if (existingAppointment == null)
+            {
+                return Json(new { success = false, message = "Appointment not found." });
+            }
+
+            existingAppointment.Status = appointment.Status;
+            _context.SaveChangesAsync();
             return Json(new { success = true, message = "Appointment updated successfully." });
         }
 

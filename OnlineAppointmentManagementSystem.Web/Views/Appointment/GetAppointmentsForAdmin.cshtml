@@ -1,0 +1,135 @@
+﻿@model IEnumerable<Appointment>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="w-75">
+        <h3 class="text-center mb-4">Appointments</h3>
+        <table class="table table-bordered table-hover text-center" id="appointmentsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>User</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr id="list-@item.Id">
+                        <td class="user-name">@item.AppUser.Name</td>
+                        <td class="service-name">@item.Service.Name</td>
+                        <td class="appointment-date">@item.AppointmentDate</td>
+                        <td class="service-status">@item.Status</td>
+                        <td>
+                            <button class="btn btn-success edit-btn" data-id="@item.Id">
+                                Change Status
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+
+    // Status değiştirme düzenleme başlatma 
+    $(document).on('click', '.edit-btn', function () {
+        var appointmentId = $(this).data('id');
+        var row = $(`#list-${appointmentId}`);
+
+        // Orijinal değerleri sakla (iptal işlemi için, satıra özel saklama)
+        var originalRole = row.find('.user-role').text();
+
+        // Bu değerleri satırda data-* özelliğinde sakla
+        row.data('originalRole', originalRole);
+
+        // AJAX ile düzenlenecek veriyi getir
+        $.ajax({
+            url: '/Appointment/GetAppointmentById',
+            type: 'GET',
+            data: { appointmentId: appointmentId },
+            success: function (response) {
+                if (response.success) {
+                    // Mevcut hücreleri düzenlenebilir alanlara çevir
+                    var statusOptions = `
+                                                    <select class="form-select status-select">
+    @foreach (var status in (List<SelectListItem>)ViewBag.StatusList)
+    {
+                                                                                                    <option value="@status.Value">@status.Text</option>
+    }
+                                                    </select>
+                                                `;
+                    row.find('.service-status').html(statusOptions);
+                    row.find('.edit-btn').remove();
+                    row.find('td:last-child').append(`
+                                                    <button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>
+                                                        <button class="btn btn-secondary cancel-btn" data-id="${appointmentId}">Cancel</button>
+                                            `);
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    });
+
+    // Status değiştirme düzenleme iptal
+    $(document).on('click', '.cancel-btn', function () {
+        var appointmentId = $(this).data('id');
+        var row = $(`#list-${appointmentId}`);
+
+        // Saklanan orijinal değerleri geri al
+        var originalRole = row.data('originalRole');
+
+
+        // Hücreleri eski haline döndür
+        row.find('.user-role').text(originalRole); // Orijinal servis adını geri getir
+
+        // Save ve Cancel butonlarını kaldır, yerine Edit butonunu ekle
+        row.find('.save-btn').remove();
+        row.find('.cancel-btn').remove();
+        row.find('td:last-child').append(`
+                                           <button class="btn btn-success edit-btn" data-id="${appointmentId}">
+                                                                    Change the Status
+                                                                </button>
+                                `);
+       
+    });
+
+    // Status değiştirme kaydetme
+    $(document).on('click', '.save-btn', function () {
+        var appointmentId = $(this).data('id');
+        var row = $(`#list-${appointmentId}`);
+        var updatedData = {
+            Id: appointmentId,
+            Status: row.find('.status-select').val(),
+        };
+        // AJAX ile veriyi güncelle
+        $.ajax({
+            url: '@Url.Action("ChangeStatusOfAppointment", "Appointment")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(updatedData),
+            success: function (response) {
+                if (response.success) {
+                    var selectedStatus = row.find('.status-select option:selected').text();
+                    row.find('.service-status').text(selectedStatus);
+                    row.find('.save-btn').remove();
+                    row.find('.cancel-btn').remove();
+                    row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${appointmentId}">
+                                                                Change Status</i>
+                                                            </button>`);
+                    
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    });
+
+
+</script>

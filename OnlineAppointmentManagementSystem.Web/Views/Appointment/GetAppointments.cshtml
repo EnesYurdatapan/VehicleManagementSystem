@@ -74,19 +74,19 @@
                 success: function (response) {
                     if (response.success) {
                         let newRow = `
-                                    <tr id="row-${response.data.id}">
-                                        <td class="service-name">${response.data.serviceName}</td>
-                                        <td class="appointment-date">${response.data.appointmentDate}</td>
-                                        <td>
-                                            <button class="btn btn-success edit-btn" data-id="${response.data.id}">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-                                            <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                `;
+                                            <tr id="row-${response.data.id}">
+                                                <td class="service-name">${response.data.serviceName}</td>
+                                                <td class="appointment-date">${response.data.appointmentDate}</td>
+                                                <td>
+                                                    <button class="btn btn-success edit-btn" data-id="${response.data.id}">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                                                    <a class="btn btn-danger" href="/Appointment/DeleteAppointment?appointmentId=${response.data.id}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        `;
                         $('#appointmentsTable tbody').append(newRow);
                         $('#ServiceId').val('');
                         $('#AppointmentDate').val('');
@@ -122,22 +122,23 @@
                     if (response.success) {
                         // Mevcut hücreleri düzenlenebilir alanlara çevir
                         var serviceOptions = `
-                                <select class="form-select service-select">
+                                        <select class="form-select service-select">
     @foreach (var service in (List<SelectListItem>)ViewBag.ServiceList)
     {
-                                            <option value="@service.Value">@service.Text</option>
+                                                            <option value="@service.Value">@service.Text</option>
     }
-                                </select>
-                            `;
+                                        </select>
+                                    `;
                         row.find('.service-name').html(serviceOptions);
                         row.find('.appointment-date').html(`
-                                <input type="datetime-local" class="form-control date-input" value="${response.data.appointmentDate}" />
-                            `);
+                                        <input type="datetime-local" class="form-control date-input" value="${response.data.appointmentDate}" />
+                                    `);
                         row.find('.edit-btn').remove();
+                        row.find('.delete-btn').remove();
                         row.find('td:last-child').append(`
-                            <button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>
-                            <button class="btn btn-secondary cancel-btn" data-id="${appointmentId}">Cancel</button>
-                        `);
+                                    <button class="btn btn-primary save-btn" data-id="${appointmentId}">Save</button>
+                                    <button class="btn btn-secondary cancel-btn" data-id="${appointmentId}">Cancel</button>
+                                `);
                     } else {
                         alert(response.message);
                     }
@@ -145,6 +146,7 @@
             });
         });
 
+        // Düzenleme iptal
         $(document).on('click', '.cancel-btn', function () {
             var appointmentId = $(this).data('id');
             var row = $(`#row-${appointmentId}`);
@@ -164,13 +166,16 @@
             row.find('.save-btn').remove();
             row.find('.cancel-btn').remove();
             row.find('td:last-child').append(`
-                   <button class="btn btn-success edit-btn" data-id="${appointmentId}">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-            `);
+                           <button class="btn btn-success edit-btn" data-id="${appointmentId}">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </button>
+                    `);
+            row.find('td:last-child').append(`
+                                       <button class="btn btn-danger delete-btn" data-id="${appointmentId}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                        `);
         });
-
-
 
         // Kaydetme İşlemi
         $(document).on('click', '.save-btn', function () {
@@ -195,16 +200,57 @@
                         row.find('.service-name').text(selectedServiceName);
                         row.find('.appointment-date').text(updatedData.AppointmentDate);
                         row.find('.save-btn').remove();
+                        row.find('.cancel-btn').remove();
                         row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${appointmentId}">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>`);
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>`);
+                        row.find('td:last-child').append(` <button class="btn btn-danger delete-btn" data-id="${appointmentId}">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>`);
                     } else {
                         alert(response.message);
                     }
                 }
             });
         });
+
+        // Silme
+        $(document).on('click', '.delete-btn', function (e) {
+            e.preventDefault(); // Default davranışı engelle (gereksiz yönlendirme olmaması için)
+
+            var appointmentId = $(this).data('id'); // ID'yi al
+            var row = $(`#row-${appointmentId}`); // Satırı hedefle
+
+            // Kullanıcıdan onay al
+            if (confirm("Silmek istediğinize emin misiniz?")) {
+                // AJAX ile silme isteği gönder
+                $.ajax({
+                    url: '/Appointment/DeleteAppointment',
+                    type: 'POST',
+                    data: { appointmentId: appointmentId },
+                    success: function (response) {
+                        if (response.success) {
+                            // Satırı tablodan kaldır
+                            row.remove();
+                            alert(response.message);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Hata: ", error);
+                        alert("Bir hata oluştu. Lütfen tekrar deneyin.");
+                    }
+                });
+            } else {
+                // Kullanıcı Hayır'ı seçti
+                alert("Silme işlemi iptal edildi.");
+            }
+        });
     });
+
+    // Silme
+
 
 </script>
 
