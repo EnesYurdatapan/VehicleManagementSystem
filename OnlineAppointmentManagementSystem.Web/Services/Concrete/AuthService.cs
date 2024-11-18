@@ -75,7 +75,8 @@ namespace OnlineAppointmentManagementSystem.Web.Services.Concrete
                 Email = user.Email,
                 Name = user.Name,
                 PhoneNumber = user.PhoneNumber,
-                Id = user.Id
+                Id = user.Id,
+                Role = roles.First(),
             };
 
             LoginResponseDto loginResponseDto = new LoginResponseDto()

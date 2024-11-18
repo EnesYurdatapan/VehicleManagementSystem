@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineAppointmentManagementSystem.Web.Models;
+using OnlineAppointmentManagementSystem.Web.Utility;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace OnlineAppointmentManagementSystem.Web.Controllers
 {
@@ -16,7 +18,24 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
         public IActionResult Index()
         {
-            var x = User;
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            //var role = HttpContext.Session.GetString("UserRole");
+
+            if (role == StaticDetails.RoleAdmin)
+            {
+                return View("AdminDashboard");
+            }
+            else if (role == StaticDetails.RoleCustomer)
+            {
+                return RedirectToAction("GetAppointments", "Appointment");
+            }
+            else
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+        }
+        public IActionResult AdminDashboard()
+        {
             return View();
         }
 

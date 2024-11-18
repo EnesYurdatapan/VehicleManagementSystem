@@ -31,6 +31,7 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Register()
         {
             var roleList = new List<SelectListItem>()
@@ -43,40 +44,37 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
 
             return View();
         }
-        public async Task<IActionResult> Register(RegistrationRequestDto registerationRequestDto)
+        [HttpPost]
+        public async Task<IActionResult> Register([FromBody] RegistrationRequestDto registerationRequestDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid input.");
+            }
+
             var responseDto = await _authService.RegisterAsync(registerationRequestDto);
-            bool assignRole;
-            if (responseDto != null/* && responseDto.IsSuccess*/)
+            if (responseDto == null)
             {
-                if (string.IsNullOrEmpty(registerationRequestDto.Role))
-                {
-                    registerationRequestDto.Role = StaticDetails.RoleCustomer;
-                }
-                assignRole = await _authService.AssignRole(registerationRequestDto.Email, registerationRequestDto.Role);
-                if (assignRole != null && assignRole==true)
-                {
-                    TempData["success"] = "Registration Successful";
-                    return null;
-                    //return RedirectToAction(nameof(Login));
-                }
+                return BadRequest("Registration failed.");
             }
-            else
-            {
-                TempData["error"] = "error";
 
+            if (string.IsNullOrEmpty(registerationRequestDto.Role))
+            {
+                registerationRequestDto.Role = StaticDetails.RoleCustomer;
             }
-            var roleList = new List<SelectListItem>()
-            {
-                new SelectListItem{Text=StaticDetails.RoleAdmin, Value=StaticDetails.RoleAdmin},
-                new SelectListItem{Text=StaticDetails.RoleCustomer, Value=StaticDetails.RoleCustomer},
-            };
 
-            ViewBag.RoleList = roleList;
-            return View(registerationRequestDto);
+            var assignRole = await _authService.AssignRole(registerationRequestDto.Email, registerationRequestDto.Role);
+            if (!assignRole)
+            {
+                return BadRequest("Role assignment failed.");
+            }
+
+            return Json(new { success = true, message = "Registration successful!" });
         }
 
+
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Login()
         {
             LoginRequestDto loginRequestDto = new();
@@ -84,21 +82,35 @@ namespace OnlineAppointmentManagementSystem.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
+        public async Task<IActionResult> Login([FromBody]LoginRequestDto loginRequestDto)
         {
             var response = await _authService.LoginAsync(loginRequestDto);
             if (response != null)
             {
                 await SignInUser(response);
                 _tokenProvider.SetToken(response.Token);
-                return RedirectToAction("Index", "Home");
+
+                // Kullanıcının rolünü tespit et ve Session/Claim ile sakla
+                var role = response.User.Role; // response içindeki role bilgisini alın
+                HttpContext.Session.SetString("UserRole", role);
+
+                // Role'e göre yönlendirme
+                if (role == StaticDetails.RoleAdmin)
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    return RedirectToAction("GetAppointments", "Appointment");
+                }
             }
             else
             {
-                TempData["error"] = "Error";
+                TempData["error"] = "Invalid username or password.";
                 return View(loginRequestDto);
             }
         }
+
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync();

@@ -1,40 +1,75 @@
-﻿@model OnlineAppointmentManagementSystem.Web.Models.Dto.RegistrationRequestDto
-
-<form method="post">
-    <div class="container border p-4">
-        <div class="row text-center p-3">
-            <h1>Register</h1>
+﻿<div class="container border p-4">
+    <div class="row text-center p-3">
+        <h1>Register</h1>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <label for="Email" class="form-label">Email</label>
+            <input id="Email" type="email" class="form-control" placeholder="Email..." />
+            <span id="EmailValidation" class="text-danger"></span>
         </div>
-        <div class="row">
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <input asp-for="Email" class="form-control" placeholder="Email..." />
-                <span asp-validation-for="Email" class="text-danger" />
-            </div>
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <input asp-for="Name" class="form-control" placeholder="Name..." />
-                <span asp-validation-for="Name" class="text-danger" />
-            </div>
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <input asp-for="PhoneNumber" class="form-control" placeholder="Phone Number..." />
-                <span asp-validation-for="PhoneNumber" class="text-danger" />
-            </div>
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <input asp-for="Password" class="form-control" placeholder="Password..." />
-                <span asp-validation-for="Password" class="text-danger" />
-            </div>
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <select asp-for="Role" class="form-select" asp-items="@ViewBag.RoleList">
-                    <option disabled selected>--Select Role--</option>
-                </select>
-            </div>
-
-            <div class="col-12 col-md-6 offset-md-3 pb-2">
-                <button type="submit" class="form-control btn btn-success" value="Submit">Register</button>
-            </div>
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <label for="Name" class="form-label">Name</label>
+            <input id="Name" type="text" class="form-control" placeholder="Name..." />
+            <span id="NameValidation" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <label for="PhoneNumber" class="form-label">Phone Number</label>
+            <input id="PhoneNumber" type="text" class="form-control" placeholder="Phone Number..." />
+            <span id="PhoneValidation" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <label for="Password" class="form-label">Password</label>
+            <input id="Password" type="password" class="form-control" placeholder="Password..." />
+            <span id="PasswordValidation" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <label for="Role" class="form-label">Role</label>
+            <select id="Role" class="form-select">
+                <option disabled selected>--Select Role--</option>
+                @foreach (var item in ViewBag.RoleList as List<SelectListItem>)
+                {
+                    <option value="@item.Value">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-6 offset-md-3 pb-2">
+            <button type="button" id="registerButton" class="form-control btn btn-success">Register</button>
         </div>
     </div>
-</form>
+</div>
+
+<div id="registerMessage" class="text-center mt-3"></div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#registerButton').click(function () {
+                // Form verilerini toplama
+                var formData = {
+                    Email: $('#Email').val(),
+                    Name: $('#Name').val(),
+                    PhoneNumber: $('#PhoneNumber').val(),
+                    Password: $('#Password').val(),
+                    Role: $('#Role').val()
+                };
+
+                // AJAX isteği gönderme
+                $.ajax({
+                    url: '@Url.Action("Register", "Auth")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function (response) {
+                        $('#registerMessage').html('<div class="alert alert-success">Registration successful!</div>');
+                        $('#Email, #Name, #PhoneNumber, #Password, #Role').val(''); // Formu sıfırla
+                    },
+                    error: function (xhr, status, error) {
+                        $('#registerMessage').html('<div class="alert alert-danger">An error occurred: ' + xhr.responseText + '</div>');
+                    }
+                });
+            });
+        });
+    </script>
 }
