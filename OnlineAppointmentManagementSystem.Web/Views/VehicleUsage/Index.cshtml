@@ -1,0 +1,56 @@
+﻿<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-6">
+        <h3 class="text-center mb-4">Enter a Vehicle Usage</h3>
+        <form id="enterVehicleUsageForm" class="p-4 border rounded shadow">
+            <div class="mb-3">
+                <label for="VehicleId" class="form-label">Vehicle</label>
+                <select id="VehicleId" class="form-select">
+                    <option disabled selected>--Select Vehicle--</option>
+                    @foreach (var item in ViewBag.VehicleList as List<SelectListItem>)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="ActiveHours" class="form-label">Active Hours</label>
+                <input id="ActiveHours" type="number" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="MaintenanceHours" class="form-label">Maintenance Hours</label>
+                <input id="MaintenanceHours" type="number" class="form-control" />
+            </div>
+            <button type="button" id="submitBtn" class="btn btn-primary w-100">Save</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    $('#submitBtn').on('click', function (e) {
+        e.preventDefault();
+        var vehicleUsageData = {
+            VehicleId: $('#VehicleId').val(),
+            ActiveHours: $('#ActiveHours').val(),
+            MaintenanceHours: $('#MaintenanceHours').val()
+        };
+        $.ajax({
+            url: '@Url.Action("AddVehicleUsage", "VehicleUsage")',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(vehicleUsageData),
+            success: function (response) {
+                if (response.success) {
+                    toastr.success(response.message);
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Hata: ", error);
+            }
+        });
+    });
+</script>
+

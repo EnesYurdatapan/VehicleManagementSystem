@@ -22,9 +22,13 @@ namespace OnlineAppointmentManagementSystem.Persistance
             serviceCollection.AddScoped<IAppointmentWriteRepository, AppointmentWriteRepository>();
             serviceCollection.AddScoped<IServiceReadRepository, ServiceReadRepository>();
             serviceCollection.AddScoped<IServiceWriteRepository, ServiceWriteRepository>();
+            serviceCollection.AddScoped<IVehicleReadRepository, VehicleReadRepository>();
+            serviceCollection.AddScoped<IVehicleWriteRepository, VehicleWriteRepository>();
+            serviceCollection.AddScoped<IVehicleUsageReadRepository, VehicleUsageReadRepository>();
+            serviceCollection.AddScoped<IVehicleUsageWriteRepository, VehicleUsageWriteRepository>();
             serviceCollection.AddScoped<IAuthService, AuthService>();
-            serviceCollection.AddScoped<IAuthService, AuthService>();
-            serviceCollection.AddScoped<IAuthService, AuthService>();
+            serviceCollection.AddScoped<IVehicleService, VehicleService>();
+            serviceCollection.AddScoped<IVehicleUsageService, VehicleUsageService>();
             serviceCollection.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<AppointmentDbContext>().AddDefaultTokenProviders();
             serviceCollection.AddDbContext<AppointmentDbContext>(option =>
             {
