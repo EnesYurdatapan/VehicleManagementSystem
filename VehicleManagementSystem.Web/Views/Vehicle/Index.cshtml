@@ -1,0 +1,239 @@
+﻿@model IEnumerable<VehicleManagementSystem.Domain.Entities.Vehicle>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<div class="row">
+    <!-- Sol taraf: Form -->
+    <div class="col-md-4">
+        <h3 class="text-center">Add Vehicle</h3>
+        <form id="addVehicleForm">
+            <div class="mb-3">
+            </div>
+            <div class="mb-3">
+                <label for="Name" class="form-label">Vehicle Name</label>
+                <input id="Name" type="text" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="Plate" class="form-label">Plate</label>
+                <input id="Plate" type="text" class="form-control" />
+            </div>
+            <button type="button" id="submitBtn" class="btn btn-primary">Add</button>
+        </form>
+    </div>
+
+    <!-- Sağ taraf: Tablo -->
+    <div class="col-md-8">
+        <h3 class="text-center">Vehicles</h3>
+        <table class="table" id="vehiclesTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Plate</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr id="row-@item.Id">
+                        <td class="vehicle-name">@item.Name</td>
+                        <td class="vehicle-plate">@item.Plate</td>
+                        <td>
+                            <button class="btn btn-success edit-btn" data-id="@item.Id">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-danger delete-btn" data-id="@item.Id">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Araç Ekleme
+        $('#submitBtn').on('click', function (e) {
+            e.preventDefault();
+            var vehicleData = {
+                Name: $('#Name').val(),
+                Plate: $('#Plate').val()
+            };
+            $.ajax({
+                url: '@Url.Action("AddVehicle", "Vehicle")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(vehicleData),
+                success: function (response) {
+                    if (response.success) {
+                        let newRow = `
+                    <tr id="row-${response.data.id}">
+                        <td class="vehicle-name">${response.data.name}</td>
+                        <td class="vehicle-plate">${response.data.plate}</td>
+                        <td>
+                            <button class="btn btn-success edit-btn" data-id="${response.data.id}">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-danger delete-btn" data-id="${response.data.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                        $('#vehiclesTable tbody').append(newRow);
+                        $('#Name').val('');
+                        $('#Plate').val('');
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Hata: ", error);
+                }
+            });
+        });
+
+        // Düzenleme Başlatma
+        $(document).on('click', '.edit-btn', function () {
+            var vehicleId = $(this).data('id');
+            var row = $(`#row-${vehicleId}`);
+            // Orijinal değerleri sakla (iptal işlemi için, satıra özel saklama)
+            var originalName = row.find('.vehicle-name').text();
+            var originalPlate = row.find('.vehicle-plate').text();
+
+            // Bu değerleri satırda data-* özelliğinde sakla
+            row.data('originalName', originalName);
+            row.data('originalPlate', originalPlate);
+
+            // AJAX ile düzenlenecek veriyi getir
+            $.ajax({
+                url: '/Vehicle/GetVehicleById',
+                type: 'GET',
+                data: { vehicleId: vehicleId },
+                success: function (response) {
+                    if (response.success) {
+                        // Mevcut hücreleri düzenlenebilir alanlara çevir
+                        row.find('.vehicle-name').html(`
+                                                    <input type="text" class="form-control vehicle-name" value="${response.data.name}" />
+                                                `);
+                        row.find('.vehicle-plate').html(`
+                                                            <input type="text" class="form-control vehicle-plate" value="${response.data.plate}" />
+                                                    `);
+                        row.find('.edit-btn').remove();
+                        row.find('.delete-btn').remove();
+                        row.find('td:last-child').append(`
+                                            <button class="btn btn-primary save-btn" data-id="${vehicleId}">Save</button>
+                                                <button class="btn btn-secondary cancel-btn" data-id="${vehicleId}">Cancel</button>
+                                        `);
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        });
+
+        // Düzenleme iptal
+        $(document).on('click', '.cancel-btn', function () {
+            var vehicleId = $(this).data('id');
+            var row = $(`#row-${vehicleId}`);
+
+            // Saklanan orijinal değerleri geri al
+            var originalName = row.data('originalName');
+            var originalPlate = row.data('originalPlate');
+
+            // Hücreleri eski haline döndür
+            row.find('.vehicle-name').text(originalName); // Orijinal servis adını geri getir
+            row.find('.vehicle-plate').text(originalPlate); // Orijinal tarihi geri getir
+
+            // Save ve Cancel butonlarını kaldır, yerine Edit butonunu ekle
+            row.find('.save-btn').remove();
+            row.find('.cancel-btn').remove();
+            row.find('td:last-child').append(`
+                                       <button class="btn btn-success edit-btn" data-id="${vehicleId}">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                            </button>
+                            `);
+            row.find('td:last-child').append(`
+                                                   <button class="btn btn-danger delete-btn" data-id="${vehicleId}">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                `);
+        });
+
+        // Kaydetme İşlemi
+        $(document).on('click', '.save-btn', function () {
+            var vehicleId = $(this).data('id');
+            var row = $(`#row-${vehicleId}`);
+            console.log(row.find('.vehicle-name').text());
+            var updatedData = {
+                Id: vehicleId,
+                Name: row.find('.vehicle-name input').val(),
+                Plate: row.find('.vehicle-plate input').val(),
+            };
+
+            // AJAX ile veriyi güncelle
+            $.ajax({
+                url: '@Url.Action("UpdateVehicle", "Vehicle")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(updatedData),
+                success: function (response) {
+                    if (response.success) {
+                        row.find('.vehicle-name').text(updatedData.Name);
+                        row.find('.vehicle-plate').text(updatedData.Plate);
+                        row.find('.save-btn').remove();
+                        row.find('.cancel-btn').remove();
+                        row.find('td:last-child').append(`<button class="btn btn-success edit-btn" data-id="${vehicleId}">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>`);
+                        row.find('td:last-child').append(` <button class="btn btn-danger delete-btn" data-id="${vehicleId}">
+                                                                    <i class="bi bi-trash"></i>
+                                                                </button>`);
+                        toastr.success(response.message)
+                    } else {
+                        toastr.error(response.message)
+                    }
+                }
+            });
+        });
+
+        // Silme
+        $(document).on('click', '.delete-btn', function (e) {  // Document seviyesinde bağlanıyor
+            e.preventDefault();
+
+            var vehicleId = $(this).data('id');
+            var row = $(`#row-${vehicleId}`);
+
+            if (confirm("Silmek istediğinize emin misiniz?")) {
+                $.ajax({
+                    url: '/Vehicle/DeleteVehicle',
+                    type: 'POST',
+                    data: { vehicleId: vehicleId },
+                    success: function (response) {
+                        if (response.success) {
+                            row.remove(); // Satırı DOM'dan kaldır
+                            toastr.success(response.message);
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        toastr.error("Bir hata oluştu. Lütfen tekrar deneyin.");
+                    }
+                });
+            } else {
+                alert("Silme işlemi iptal edildi.");
+            }
+        });
+
+    });
+
+
+
+
+</script>
