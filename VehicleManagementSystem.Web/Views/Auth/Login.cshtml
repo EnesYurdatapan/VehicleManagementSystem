@@ -39,16 +39,21 @@
                     contentType: 'application/json',
                     data: JSON.stringify(loginData),
                     success: function (response) {
-                        // Token'ı localStorage'a kaydet
-                        localStorage.setItem("token", response.data.token);
-
-                        $('#loginMessage').html('<div class="alert alert-success">Login successful! Redirecting...</div>');
-                        setTimeout(function () {
-                            window.location.href = '/Home/Index'; // Giriş sonrası yönlendirme
-                        }, 2000);
-                    },
-                    error: function (xhr, status, error) {
-                        $('#loginMessage').html('<div class="alert alert-danger">Invalid username or password.</div>');
+                        if (response.success) {
+                            toastr.success(response.message);
+                            // Token'ı localStorage'a kaydet
+                            localStorage.setItem("token", response.data.token);
+                            $('#loginMessage').html('<div class="alert alert-success">Login successful! Redirecting...</div>');
+                            setTimeout(function () {
+                                console.log(response.data.role);
+                                if (response.data.role == "ADMIN")
+                                    window.location.href = '/Home/AdminDashboard'; // Giriş sonrası yönlendirme
+                                else
+                                    window.location.href = '/Home/UserDashboard'; // Giriş sonrası yönlendirme
+                            }, 200);
+                        } else {
+                            toastr.error(response.message);
+                        }
                     }
                 });
             });

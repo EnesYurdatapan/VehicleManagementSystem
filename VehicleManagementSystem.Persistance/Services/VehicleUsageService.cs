@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VehicleManagementSystem.Application.Abstraction.Services;
+using VehicleManagementSystem.Application.Constants;
 using VehicleManagementSystem.Application.DTOs;
 using VehicleManagementSystem.Application.Repositories;
+using VehicleManagementSystem.Application.Results;
 using VehicleManagementSystem.Domain.Entities;
 
 namespace VehicleManagementSystem.Persistance.Services
@@ -22,41 +24,74 @@ namespace VehicleManagementSystem.Persistance.Services
             _vehicleUsageReadRepository = vehicleUsageReadRepository;
         }
 
-        public async Task<VehicleUsageDto> AddVehicleUsage(VehicleUsageDto vehicleUsage)
+        public async Task<IDataResult<VehicleUsageDto>> AddVehicleUsage(VehicleUsageDto vehicleUsage)
         {
-            var idleHours = (7 * 24) - (vehicleUsage.ActiveHours + vehicleUsage.MaintenanceHours);
-            var vehicleUsageToAdd = new VehicleUsage
+            var x = _vehicleUsageReadRepository.GetAll().Include(vu=>vu.Vehicle).Where(vu => vu.Vehicle.Plate == vehicleUsage.VehiclePlate).Include(vu => vu.Vehicle);
+            if (x!=null)
             {
-                ActiveHours = vehicleUsage.ActiveHours,
-                MaintenanceHours = vehicleUsage.MaintenanceHours,
-                IdleHours = idleHours,
-                CreatedDate = DateTime.UtcNow,
-                UpdatedDate = DateTime.UtcNow,
-                VehicleId = vehicleUsage.VehicleId,
-                Id = Guid.NewGuid().ToString(),
-            };
-            await _vehicleUsageWriteRepository.AddAsync(vehicleUsageToAdd);
-            await _vehicleUsageWriteRepository.SaveAsync();
-            return vehicleUsage;
+                if (vehicleUsage.MaintenanceHours > (7 * 24) || vehicleUsage.ActiveHours > (7 * 24) || vehicleUsage.MaintenanceHours + vehicleUsage.ActiveHours > (7 * 24))
+                    return new ErrorDataResult<VehicleUsageDto>(Messages.VehicleUsageHoursErrorMessage);
+                var idleHours = (7 * 24) - (vehicleUsage.ActiveHours + vehicleUsage.MaintenanceHours);
+                var vehicleUsageToAdd = new VehicleUsage
+                {
+                    ActiveHours = vehicleUsage.ActiveHours,
+                    MaintenanceHours = vehicleUsage.MaintenanceHours,
+                    IdleHours = idleHours,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow,
+                    VehicleId = vehicleUsage.VehicleId,
+                    Id = Guid.NewGuid().ToString(),
+                };
+                bool result = await _vehicleUsageWriteRepository.AddAsync(vehicleUsageToAdd);
+                if (result)
+                {
+                    await _vehicleUsageWriteRepository.SaveAsync();
+                    return new SuccessDataResult<VehicleUsageDto>(vehicleUsage, Messages.VehicleUsageSuccessfullyEnteredMessage);
+
+                }
+                return new ErrorDataResult<VehicleUsageDto>(vehicleUsage, Messages.VehicleUsageCouldntEnteredMessage);
+            }
+            return new ErrorDataResult<VehicleUsageDto>(Messages.TheCarAlreadyHadVehicleUsageError);
+           
         }
 
-        public async Task<bool> DeleteVehicleUsage(string vehicleUsageId)
+        public async Task<IResult> DeleteVehicleUsage(string vehicleUsageId)
         {
             var vehicleUsageToDelete = await _vehicleUsageReadRepository.GetByIdAsync(vehicleUsageId);
             if (vehicleUsageToDelete != null)
             {
-                await _vehicleUsageWriteRepository.DeleteAsync(vehicleUsageToDelete.Id);
-                return true;
+                bool result = await _vehicleUsageWriteRepository.DeleteAsync(vehicleUsageToDelete.Id);
+                if (result)
+                {
+                    await _vehicleUsageWriteRepository.SaveAsync();
+                    return new SuccessResult(Messages.VehicleUsageSuccessfullyDeletedMessage);
+                }
             }
-            return false;
+            return new ErrorResult(Messages.VehicleUsageCouldntDeletedMessage);
         }
 
-        public List<VehicleUsage> GetAllVehicleUsage()
+        public IDataResult<List<VehicleUsageDto>> GetAllVehicleUsage()
         {
-            return _vehicleUsageReadRepository.GetAll().Include(vu=>vu.Vehicle).ToList();
+            var vehicleUsages = _vehicleUsageReadRepository
+                .GetAll()
+                .Include(vu => vu.Vehicle)  // Araç bilgileri de dahil ediliyor
+                .ToList();
+
+            var vehicleUsageDtos = vehicleUsages.Select(vu => new VehicleUsageDto
+            {
+                Id = vu.Id,  // BaseEntity'den gelen ID
+                VehicleId = vu.VehicleId,
+                ActiveHours = vu.ActiveHours,
+                MaintenanceHours = vu.MaintenanceHours,
+                IdleHours = vu.IdleHours,
+                VehicleName = vu.Vehicle.Name,
+                VehiclePlate = vu.Vehicle.Plate
+            }).ToList();
+
+            return new SuccessDataResult<List<VehicleUsageDto>>(vehicleUsageDtos);
         }
 
-        public async Task<VehicleUsageDto> GetVehicleUsageById(string id)
+        public async Task<IDataResult<VehicleUsageDto>> GetVehicleUsageById(string id)
         {
             var vehicleUsage = await _vehicleUsageReadRepository.GetByIdAsync(id);
             if (vehicleUsage != null)
@@ -69,12 +104,12 @@ namespace VehicleManagementSystem.Persistance.Services
                     MaintenanceHours = vehicleUsage.MaintenanceHours,
                     VehicleId = vehicleUsage.VehicleId,
                 };
-                return vehicleUsageDto;
+                return new SuccessDataResult<VehicleUsageDto>(vehicleUsageDto);
             }
-            return new VehicleUsageDto();
+            return new ErrorDataResult<VehicleUsageDto>();
         }
 
-        public async Task<bool> UpdateVehicleUsage(VehicleUsageDto vehicleUsage)
+        public async Task<IResult> UpdateVehicleUsage(VehicleUsageDto vehicleUsage)
         {
             var vehicleToUpdate = await _vehicleUsageReadRepository.GetByIdAsync(vehicleUsage.Id);
             if (vehicleToUpdate != null)
@@ -82,12 +117,12 @@ namespace VehicleManagementSystem.Persistance.Services
                 vehicleToUpdate.ActiveHours = vehicleUsage.ActiveHours;
                 vehicleToUpdate.MaintenanceHours = vehicleUsage.MaintenanceHours;
                 vehicleToUpdate.IdleHours = (7 * 24) - (vehicleUsage.ActiveHours + vehicleUsage.MaintenanceHours);
-                vehicleToUpdate.UpdatedDate= DateTime.UtcNow;
+                vehicleToUpdate.UpdatedDate = DateTime.UtcNow;
 
                 await _vehicleUsageWriteRepository.SaveAsync();
-                return true;
+                return new SuccessResult(Messages.VehicleUsageSuccessfullyUpdatedMessage);
             }
-            return false;
+            return new ErrorResult(Messages.VehicleUsageCouldntUpdatedMessage);
         }
     }
 }

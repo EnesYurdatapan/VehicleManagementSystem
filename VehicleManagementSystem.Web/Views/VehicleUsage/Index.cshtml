@@ -43,14 +43,22 @@
             success: function (response) {
                 if (response.success) {
                     toastr.success(response.message);
+                    clearForm();
                 } else {
                     toastr.error(response.message);
+                    clearForm();
                 }
             },
-            error: function (xhr, status, error) {
-                console.error("Hata: ", error);
-            }
         });
+
+        function clearForm() {
+            $('#VehicleId').val('');  // İlk seçeneği seçmek için
+            $('#ActiveHours').val('');
+            $('#MaintenanceHours').val('');
+        }
     });
 </script>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

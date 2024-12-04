@@ -4,16 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VehicleManagementSystem.Application.DTOs;
+using VehicleManagementSystem.Application.Results;
 using VehicleManagementSystem.Domain.Entities;
 
 namespace VehicleManagementSystem.Application.Abstraction.Services
 {
     public interface IVehicleService
     {
-        Task<VehicleDto> AddVehicle(VehicleDto vehicle);
-        Task<bool> DeleteVehicle(string vehicleId);
-        Task<bool> UpdateVehicle(VehicleDto vehicle);
-        List<Vehicle> GetAllVehicles();
-        Task<VehicleDto> GetVehicleById(string id);
+        Task<IDataResult<VehicleDto>> AddVehicle(VehicleDto vehicle);
+        Task<IResult> DeleteVehicle(string vehicleId);
+        Task<IResult> UpdateVehicle(VehicleDto vehicle);
+        IDataResult<List<VehicleDto>> GetAllVehicles();
+        Task<IDataResult<VehicleDto>> GetVehicleById(string id);
     }
 }

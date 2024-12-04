@@ -2,9 +2,12 @@
 using System;
 using System.Collections.Generic;
 using VehicleManagementSystem.Application.Abstraction.Services;
+using VehicleManagementSystem.Application.Constants;
 using VehicleManagementSystem.Application.DTOs;
 using VehicleManagementSystem.Application.Repositories;
+using VehicleManagementSystem.Application.Results;
 using VehicleManagementSystem.Domain.Entities;
+using VehicleManagementSystem.Persistance.Repositories;
 
 namespace VehicleManagementSystem.Persistance.Services
 {
@@ -19,7 +22,7 @@ namespace VehicleManagementSystem.Persistance.Services
             _vehicleWriteRepository = vehicleWriteRepository;
         }
 
-        public async Task<VehicleDto> AddVehicle(VehicleDto vehicleDto)
+        public async Task<IDataResult<VehicleDto>> AddVehicle(VehicleDto vehicleDto)
         {
             Vehicle vehicle = new Vehicle()
             {
@@ -30,33 +33,49 @@ namespace VehicleManagementSystem.Persistance.Services
                 UpdatedDate = DateTime.UtcNow
             };
             vehicleDto.Id = vehicle.Id;
-            await _vehicleWriteRepository.AddAsync(vehicle);
-            await _vehicleWriteRepository.SaveAsync();
-            return vehicleDto;
+            bool result = await _vehicleWriteRepository.AddAsync(vehicle);
+            if (result)
+            {
+                await _vehicleWriteRepository.SaveAsync();
+                return new SuccessDataResult<VehicleDto>(vehicleDto, Messages.VehicleSuccessfullyAddedMessage);
+            }
+            return new ErrorDataResult<VehicleDto>(vehicleDto, Messages.VehicleCouldntAddedMessage);
         }
 
-        public async Task<bool> DeleteVehicle(string vehicleId)
+        public async Task<IResult> DeleteVehicle(string vehicleId)
         {
             var vehicleToDelete = await _vehicleReadRepository.GetByIdAsync(vehicleId);
             if (vehicleToDelete != null)
             {
-                await _vehicleWriteRepository.DeleteAsync(vehicleToDelete.Id);
-                await _vehicleWriteRepository.SaveAsync();
+                bool result = await _vehicleWriteRepository.DeleteAsync(vehicleToDelete.Id);
+                if (result)
+                {
+                    await _vehicleWriteRepository.SaveAsync();
+                    return new SuccessResult(Messages.VehicleSuccessfullyDeletedMessage);
+                }
             }
 
-            else
-                return false;
+            return new ErrorResult(Messages.VehicleCouldntDeletedMessage);
 
-            return true;
         }
 
-        public List<Vehicle> GetAllVehicles()
+        public IDataResult<List<VehicleDto>> GetAllVehicles()
         {
-            return _vehicleReadRepository.GetAll().ToList();
+            var vehicles = _vehicleReadRepository
+               .GetAll()
+               .ToList();
+
+            var vehicleDtos = vehicles.Select(vu => new VehicleDto
+            {
+                Id = vu.Id,
+                Plate = vu.Plate,
+                Name= vu.Name,
+            }).ToList();
+            return new SuccessDataResult<List<VehicleDto>>(vehicleDtos);
         }
 
 
-        public async Task<VehicleDto> GetVehicleById(string id)
+        public async Task<IDataResult<VehicleDto>> GetVehicleById(string id)
         {
             var vehicle = await _vehicleReadRepository.GetByIdAsync(id);
             if (vehicle != null)
@@ -67,24 +86,24 @@ namespace VehicleManagementSystem.Persistance.Services
                     Name = vehicle.Name,
                     Id = vehicle.Id,
                 };
-                return vehicleDto;
+                return new SuccessDataResult<VehicleDto>(vehicleDto);
             }
-            return new VehicleDto();
+            return new ErrorDataResult<VehicleDto>();
         }
 
-        public async Task<bool> UpdateVehicle(VehicleDto vehicle)
+        public async Task<IResult> UpdateVehicle(VehicleDto vehicle)
         {
             var vehicleToUpdate = await _vehicleReadRepository.GetByIdAsync(vehicle.Id);
-            if (vehicleToUpdate!=null)
+            if (vehicleToUpdate != null)
             {
                 vehicleToUpdate.Name = vehicle.Name;
-                vehicleToUpdate.Plate= vehicle.Plate;
+                vehicleToUpdate.Plate = vehicle.Plate;
                 vehicleToUpdate.UpdatedDate = DateTime.UtcNow;
 
                 await _vehicleWriteRepository.SaveAsync();
-                return true;
+                return new SuccessResult(Messages.VehicleSuccessfullyUpdatedMessage);
             }
-            return false;
+            return new ErrorResult(Messages.VehicleCouldntUpdatedMessage);
         }
     }
 }

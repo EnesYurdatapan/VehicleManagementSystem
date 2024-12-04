@@ -1,15 +1,10 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VehicleManagementSystem.Application.Abstraction.Services;
 using VehicleManagementSystem.Application.Abstraction.Token;
+using VehicleManagementSystem.Application.Constants;
 using VehicleManagementSystem.Application.DTOs;
+using VehicleManagementSystem.Application.Results;
 using VehicleManagementSystem.Domain.Entities.Identity;
 using VehicleManagementSystem.Persistance.Context;
 
@@ -30,65 +25,69 @@ namespace VehicleManagementSystem.Persistance.Services
             _jwtTokenGenerator = jwtTokenGenerator;
         }
 
-        public async Task<bool> AssignRole(string email, string roleName)
+        public async Task<IResult> AssignRole(string email, string roleName)
         {
             var user = await _vehicleDbContext.AppUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
-            var roleToDelete = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
-            if (roleToDelete == null)
+            if (user != null)
             {
-                if (user != null)
+                var roleToDelete = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
+                if (roleToDelete == null)
                 {
-                    if (!_roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
+                    if (user != null)
                     {
-                        await _roleManager.CreateAsync(new IdentityRole(roleName));
+                        if (!_roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole(roleName));
+                        }
+
+                        var result = await _userManager.AddToRoleAsync(user, roleName);
+
+                        return new SuccessResult(Messages.RoleSuccessfullyAddedMessage);
                     }
-
-                    var result = await _userManager.AddToRoleAsync(user, roleName);
-
-                    return true;
+                }
+                else
+                {
+                    await _userManager.RemoveFromRoleAsync(user, roleToDelete);
+                    await _userManager.AddToRoleAsync(user, roleName);
+                    return new SuccessResult(Messages.RoleCouldntAddedMessage);
                 }
             }
-            else
-            {
-                await _userManager.RemoveFromRoleAsync(user, roleToDelete);
-                await _userManager.AddToRoleAsync(user, roleName);
-            }
-            return true;
+            return new ErrorResult(Messages.UserNotFoundForRoleMessage);
         }
 
-        public async Task<LoginResponseDto> LoginAsync(LoginRequestDto loginRequestDto)
+        public async Task<IDataResult<LoginResponseDto>> LoginAsync(LoginRequestDto loginRequestDto)
         {
-            var user = _vehicleDbContext.AppUsers.FirstOrDefault(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
+            AppUser user = await _vehicleDbContext.AppUsers.FirstOrDefaultAsync(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
 
             bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
 
             if (user == null || isValid == false)
-            {
-                return new LoginResponseDto() { User = null, Token = "" };
-            }
+                return new ErrorDataResult<LoginResponseDto>(new LoginResponseDto() { User = null, Token = "" },Messages.UserDatasNotValidMessage);
 
             var roles = await _userManager.GetRolesAsync(user);
             var token = _jwtTokenGenerator.GenerateToken(user, roles);
-
-            UserDto userDto = new()
+            if (roles != null && token != null)
             {
-                Email = user.Email,
-                Name = user.Name,
-                PhoneNumber = user.PhoneNumber,
-                Id = user.Id,
-                Role = roles.First(),
-            };
+                UserDto userDto = new()
+                {
+                    Email = user.Email,
+                    Name = user.Name,
+                    PhoneNumber = user.PhoneNumber,
+                    Id = user.Id,
+                    Role = roles.First(),
+                };
 
-            LoginResponseDto loginResponseDto = new LoginResponseDto()
-            {
-                User = userDto,
-                Token = token
-            };
-
-            return loginResponseDto;
+                LoginResponseDto loginResponseDto = new LoginResponseDto()
+                {
+                    User = userDto,
+                    Token = token
+                };
+                return new SuccessDataResult<LoginResponseDto>(loginResponseDto, Messages.SuccessfullyLoggedInMessage);
+            }
+            return new ErrorDataResult<LoginResponseDto>(Messages.UserRoleAndTokenErrorMessage);
         }
 
-        public async Task<string> RegisterAsync(RegistrationRequestDto registerationRequestDto)
+        public async Task<IResult> RegisterAsync(RegistrationRequestDto registerationRequestDto)
         {
             AppUser user = new()
             {
@@ -99,33 +98,15 @@ namespace VehicleManagementSystem.Persistance.Services
                 Name = registerationRequestDto.Name,
                 PhoneNumber = registerationRequestDto.PhoneNumber,
             };
-            try
-            {
-                var result = await _userManager.CreateAsync(user, registerationRequestDto.Password);
-                if (result.Succeeded)
-                {
-                    var userToReturn = _vehicleDbContext.AppUsers.AsNoTracking().First(u => u.UserName == registerationRequestDto.Email);
 
-                    UserDto userDto = new()
-                    {
-                        Email = userToReturn.Email,
-                        Name = userToReturn.Name,
-                        PhoneNumber = userToReturn.PhoneNumber,
-                        Id = userToReturn.Id
-                    };
+            var result = await _userManager.CreateAsync(user, registerationRequestDto.Password);
+            await AssignRole(registerationRequestDto.Email, registerationRequestDto.Role);
+            if (result.Succeeded)
+                return new SuccessResult(Messages.UserSuccessfullyCreatedMessage);
 
-                    return "";
-                }
-                else
-                {
-                    return result.Errors.FirstOrDefault().Description;
-                }
-            }
-            catch (Exception ex)
-            {
+            return new ErrorResult(result.Errors.First().Description);
 
-            }
-            return "Error Encountered";
         }
+
     }
 }

@@ -42,7 +42,7 @@ namespace VehicleManagementSystem.Web.Controllers
             var roleList = new List<SelectListItem>()
             {
                 new SelectListItem{Text=StaticDetails.RoleAdmin, Value=StaticDetails.RoleAdmin},
-                new SelectListItem{Text=StaticDetails.RoleCustomer, Value=StaticDetails.RoleCustomer},
+                new SelectListItem{Text=StaticDetails.RoleUser, Value=StaticDetails.RoleUser},
             };
 
             ViewBag.RoleList = roleList;
@@ -51,51 +51,39 @@ namespace VehicleManagementSystem.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> AddUser([FromBody] RegistrationRequestDto registerationRequestDto)
         {
-            var responseDto = await _authService.RegisterAsync(registerationRequestDto);
-            bool assignRole;
-            if (responseDto != null/* && responseDto.IsSuccess*/)
+            if (string.IsNullOrEmpty(registerationRequestDto.Role))
+                registerationRequestDto.Role = StaticDetails.RoleUser;
+
+            var result = await _authService.RegisterAsync(registerationRequestDto);
+            if (result.Success)
             {
-                if (string.IsNullOrEmpty(registerationRequestDto.Role))
+                return Json(new
                 {
-                    registerationRequestDto.Role = StaticDetails.RoleCustomer;
-                }
-                assignRole = await _authService.AssignRole(registerationRequestDto.Email, registerationRequestDto.Role);
-                if (assignRole != null && assignRole == true)
-                {
-                    return Json(new
+                    success = result.Success,
+                    message = result.Message,
+                    data = new
                     {
-                        success = true,
-                        message = "Appointment added successfully",
-                        data = new
-                        {
-                            Id = registerationRequestDto.Id,
-                            Name = registerationRequestDto.Name,
-                            Email = registerationRequestDto.Email,
-                            Phone = registerationRequestDto.PhoneNumber,
-                            Role = registerationRequestDto.Role
-                        }
-                    });
-                }
+                        Id = registerationRequestDto.Id,
+                        Name = registerationRequestDto.Name,
+                        Email = registerationRequestDto.Email,
+                        Phone = registerationRequestDto.PhoneNumber,
+                        Role = registerationRequestDto.Role
+                    }
+                });
             }
-            else
-            {
-                return Json(new { success = false, message = "Error" });
-
-            }
-            return Json(new { success = false, message = "Error" });
-
+            return Json(new { success = result.Success, message = result.Message });
         }
 
         [HttpPost]
-        public IActionResult DeleteUser(string userId)
+        public async Task<IActionResult> DeleteUser(string userId)
         {
-            var user = _userManager.Users.FirstOrDefault(u=>u.Id==userId);
+            var user = _userManager.Users.FirstOrDefault(u => u.Id == userId);
             if (user != null)
             {
-                _userManager.DeleteAsync(user);
-                return Json(new { success = true, message = "user deleted successfully." });
+                await _userManager.DeleteAsync(user);
+                return Json(new { success = true, message = "User deleted successfully." });
             }
-            return Json(new { success = false, message = "user not found." });
+            return Json(new { success = false, message = "User not found." });
         }
 
         [HttpGet]
@@ -103,12 +91,11 @@ namespace VehicleManagementSystem.Web.Controllers
         {
             var user = _userManager.Users
                 .FirstOrDefault(u => u.Id == userId);
-            var role = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
-
             if (user == null)
-            {
                 return Json(new { success = false, message = "User not found." });
-            }
+
+
+            var role = _userManager.GetRolesAsync(user).Result.FirstOrDefault();
 
             return Json(new
             {
@@ -126,9 +113,9 @@ namespace VehicleManagementSystem.Web.Controllers
         public async Task<IActionResult> AssignRoleToUser([FromBody] RegistrationRequestDto registrationRequestDto)
         {
 
-            await _authService.AssignRole(registrationRequestDto.Email, registrationRequestDto.Role);
+            var result = await _authService.AssignRole(registrationRequestDto.Email, registrationRequestDto.Role);
 
-            return Json(new { success = true, message = "User Role updated successfully." });
+            return Json(new { success = result.Success, message = result.Message });
         }
     }
 }

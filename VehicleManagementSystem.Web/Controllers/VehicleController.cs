@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VehicleManagementSystem.Application.Abstraction.Services;
 using VehicleManagementSystem.Application.DTOs;
+using VehicleManagementSystem.Domain.Entities;
+using VehicleManagementSystem.Infrastructure.Utility;
 
 namespace VehicleManagementSystem.Web.Controllers
 {
+    [Authorize]
     public class VehicleController : Controller
     {
         private readonly IVehicleService _vehicleService;
@@ -12,87 +16,76 @@ namespace VehicleManagementSystem.Web.Controllers
         {
             _vehicleService = vehicleService;
         }
-
+        [Authorize(Roles = StaticDetails.RoleAdmin)]
         public async Task<IActionResult> Index()
         {
-         
             var vehicles = _vehicleService.GetAllVehicles();
-            if (vehicles == null)
+            if (vehicles.Data== null)
             {
                 return View();
             }
-            return View(vehicles);
+            return View(vehicles.Data);
         }
 
         [HttpPost]
         public async Task<IActionResult> AddVehicle([FromBody] VehicleDto vehicleDto)
         {
-            try
+            var result = await _vehicleService.AddVehicle(vehicleDto);
+            if (result.Success)
             {
-                var result = await _vehicleService.AddVehicle(vehicleDto);
                 return Json(new
                 {
-                    success = true,
-                    message = "Vehicle added successfully",
+                    success = result.Success,
+                    message = result.Message,
                     data = new
                     {
-                        Id = vehicleDto.Id,
-                        Name = vehicleDto.Name,
-                        Plate = vehicleDto.Plate
+                        Id = result.Data.Id,
+                        Name = result.Data.Name,
+                        Plate = result.Data.Plate
                     }
                 });
             }
-            catch (Exception ex)
+            return Json(new
             {
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
+                success = result.Success,
+                message = result.Message
+            });
 
+        }
 
         [HttpPost]
         public async Task<IActionResult> DeleteVehicle(string vehicleId)
         {
             var result = await _vehicleService.DeleteVehicle(vehicleId);
-            if (result != false)
-            {
-                return Json(new { success = true, message = "Vehicle deleted successfully." });
-            }
-            return Json(new { success = false, message = "Vehicle not found." });
+            return Json(new { success = result.Success, message = result.Message });
         }
 
         [HttpGet]
         public async Task<IActionResult> GetVehicleById(string vehicleId)
         {
-            var vehicle = await _vehicleService.GetVehicleById(vehicleId);
+            var result = await _vehicleService.GetVehicleById(vehicleId);
 
-            if (vehicle == null)
+            if (result.Success)
             {
-                return Json(new { success = false, message = "Vehicle not found." });
-            }
-
-            return Json(new
-            {
-                success = true,
-                data = new
+                return Json(new
                 {
-                 Id= vehicle.Id,
-                 Name = vehicle.Name,
-                 Plate = vehicle.Plate
-                }
-            });
+                    success = result.Success,
+                    data = new
+                    {
+                        Id = result.Data.Id,
+                        Name = result.Data.Name,
+                        Plate = result.Data.Plate
+                    }
+                });
+            }
+            return Json(new { success = result.Success, message = result.Message });
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdateVehicle([FromBody] VehicleDto vehicleDto)
         {
             var result = await _vehicleService.UpdateVehicle(vehicleDto);
-
-            if (result == false)
-            {
-                return Json(new { success = false, message = "Vehicle not found." });
-            }
-
-            return Json(new { success = true, message = "Vehicle updated successfully." });
+            return Json(new { success = result.Success, message = result.Message });
         }
     }
 }

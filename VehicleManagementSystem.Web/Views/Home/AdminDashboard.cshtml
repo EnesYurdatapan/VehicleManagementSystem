@@ -1,14 +1,58 @@
-﻿<div class="container text-center mt-5">
-    <div class="row">
-        <div class="col-md-6">
-            <a href="@Url.Action("Users", "User")" class="btn btn-primary btn-lg w-100" style="height: 150px;">
-                Manage Users
-            </a>
-        </div>
-        <div class="col-md-6">
-            <a href="@Url.Action("GetAppointmentsForAdmin", "Appointment")" class="btn btn-success btn-lg w-100" style="height: 150px;">
-                Manage Appointments
-            </a>
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/AdminDashboard.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="container text-center mt-5">
+        <div class="welcome-text">Welcome to the Admin Panel</div>
+        <div class="row g-4">
+            <!-- Manage Users Card -->
+            <div class="col-md-4">
+                <a href="@Url.Action("Users", "User")" class="text-decoration-none">
+                    <div class="card p-4 shadow-sm">
+                        <div class="card-body">
+                            <i class="bi bi-people card-icon"></i>
+                            <h5 class="card-title mt-3">Manage Users</h5>
+                            <p class="card-text">View, add, and manage user accounts.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Enter Vehicle Card -->
+            <div class="col-md-4">
+                <a href="@Url.Action("Index", "Vehicle")" class="text-decoration-none">
+                    <div class="card p-4 shadow-sm">
+                        <div class="card-body">
+                            <i class="bi bi-car-front card-icon"></i>
+                            <h5 class="card-title mt-3">Enter Vehicle</h5>
+                            <p class="card-text">Add new vehicles to the system.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Vehicle Usage Card -->
+            <div class="col-md-4">
+                <a href="@Url.Action("GetAllVehicleUsages", "VehicleUsage")" class="text-decoration-none">
+                    <div class="card p-4 shadow-sm">
+                        <div class="card-body">
+                            <i class="bi bi-graph-up-arrow card-icon"></i>
+                            <h5 class="card-title mt-3">Vehicle Usage Table & Graphics</h5>
+                            <p class="card-text">Analyze vehicle usage data with charts.</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
-</div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

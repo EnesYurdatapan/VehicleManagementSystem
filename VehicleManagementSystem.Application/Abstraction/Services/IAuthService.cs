@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VehicleManagementSystem.Application.DTOs;
+using VehicleManagementSystem.Application.Results;
 
 namespace VehicleManagementSystem.Application.Abstraction.Services
 {
     public interface IAuthService
     {
-        Task<string> RegisterAsync(RegistrationRequestDto registrationRequestDto);
-        Task<LoginResponseDto> LoginAsync(LoginRequestDto loginRequestDto);
-        Task<bool> AssignRole(string email, string roleName);
+        Task<IResult> RegisterAsync(RegistrationRequestDto registrationRequestDto);
+        Task<IDataResult<LoginResponseDto>> LoginAsync(LoginRequestDto loginRequestDto);
+        Task<IResult> AssignRole(string email, string roleName);
     }
 }

@@ -8,5 +8,7 @@ namespace VehicleManagementSystem.Application.DTOs
         public double ActiveHours { get; set; }
         public double MaintenanceHours { get; set; }
         public double IdleHours { get; set; }
+        public string? VehicleName { get; set; }
+        public string? VehiclePlate { get; set; }
     }
 }

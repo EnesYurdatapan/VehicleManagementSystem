@@ -19,25 +19,22 @@ namespace VehicleManagementSystem.Web.Controllers
         }
         public IActionResult Index()
         {
-            var username = User.Identity.Name;
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
             var role = User.FindFirstValue(ClaimTypes.Role);
-            //var role = HttpContext.Session.GetString("UserRole");
-
-            if (role == StaticDetails.RoleAdmin)
-            {
-                return View("AdminDashboard");
-            }
-            else if (role == StaticDetails.RoleCustomer)
-            {
-                return RedirectToAction("GetAppointments", "Appointment");
-            }
-            else
-            {
-                return RedirectToAction("Login", "Auth");
-            }
+            if (role!=null && role==StaticDetails.RoleAdmin)
+                return RedirectToAction("AdminDashboard");
+            
+            else if (role!= null && role==StaticDetails.RoleUser)
+                return RedirectToAction("UserDashboard");
+            
+            return RedirectToAction("Login","Auth");
         }
+        [Authorize(Roles = StaticDetails.RoleAdmin)]
         public IActionResult AdminDashboard()
+        {
+            return View();
+        }
+        [Authorize(Roles = StaticDetails.RoleUser)]
+        public IActionResult UserDashboard()
         {
             return View();
         }

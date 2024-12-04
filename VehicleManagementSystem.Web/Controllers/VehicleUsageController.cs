@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using VehicleManagementSystem.Application.Abstraction.Services;
 using VehicleManagementSystem.Application.DTOs;
+using VehicleManagementSystem.Infrastructure.Utility;
 
 namespace VehicleManagementSystem.Web.Controllers
 {
@@ -15,11 +17,11 @@ namespace VehicleManagementSystem.Web.Controllers
             _vehicleUsageService = vehicleUsageService;
             _vehicleService = vehicleService;
         }
-
+        [Authorize(Roles = StaticDetails.RoleUser)]
         public async Task<IActionResult> Index()
         {
             var vehicles = _vehicleService.GetAllVehicles();
-            List<SelectListItem> vehicleList = vehicles.Select(vehicle => new SelectListItem
+            List<SelectListItem> vehicleList = vehicles.Data.Select(vehicle => new SelectListItem
             {
                 Text = vehicle.Name + "-" + vehicle.Plate,
                 Value = vehicle.Id
@@ -29,32 +31,34 @@ namespace VehicleManagementSystem.Web.Controllers
 
             return View();
         }
-
+        [Authorize(Roles = StaticDetails.RoleAdmin)]
         public async Task<IActionResult> GetAllVehicleUsages()
         {
             var vehicleUsages = _vehicleUsageService.GetAllVehicleUsage();
-            return View(vehicleUsages);
+            return View(vehicleUsages.Data);
         }
 
         [HttpPost]
         public async Task<IActionResult> AddVehicleUsage([FromBody] VehicleUsageDto vehicleUsageDto)
         {
-            try
+            var result = await _vehicleUsageService.AddVehicleUsage(vehicleUsageDto);
+            if (result.Success)
             {
-                var result = await _vehicleUsageService.AddVehicleUsage(vehicleUsageDto);
                 return Json(new
                 {
-                    success = true,
-                    message = "Vehicle Usage Successfully Saved",
+                    success = result.Success,
+                    message = result.Message,
                     data = new
                     {
+                        Data = result.Data
                     }
                 });
             }
-            catch (Exception ex)
+            return Json(new
             {
-                return Json(new { success = false, message = ex.Message });
-            }
+                success = result.Success,
+                message = result.Message
+            });
         }
     }
 }

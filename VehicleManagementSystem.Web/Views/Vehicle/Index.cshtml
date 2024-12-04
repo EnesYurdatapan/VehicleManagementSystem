@@ -1,4 +1,4 @@
-﻿@model IEnumerable<VehicleManagementSystem.Domain.Entities.Vehicle>
+﻿@model IEnumerable<VehicleManagementSystem.Application.DTOs.VehicleDto>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 
@@ -91,9 +91,6 @@
                     } else {
                         toastr.error(response.message);
                     }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Hata: ", error);
                 }
             });
         });

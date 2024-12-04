@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using VehicleManagementSystem.Infrastructure.Services.Token;
 using Newtonsoft.Json.Linq;
+using System.Data;
 
 namespace VehicleManagementSystem.Web.Controllers
 {
@@ -44,7 +45,7 @@ namespace VehicleManagementSystem.Web.Controllers
             var roleList = new List<SelectListItem>()
             {
                 new SelectListItem{Text=StaticDetails.RoleAdmin, Value=StaticDetails.RoleAdmin},
-                new SelectListItem{Text=StaticDetails.RoleCustomer, Value=StaticDetails.RoleCustomer},
+                new SelectListItem{Text=StaticDetails.RoleUser, Value=StaticDetails.RoleUser},
             };
 
             ViewBag.RoleList = roleList;
@@ -54,29 +55,12 @@ namespace VehicleManagementSystem.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Register([FromBody] RegistrationRequestDto registerationRequestDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest("Invalid input.");
-            }
-
-            var responseDto = await _authService.RegisterAsync(registerationRequestDto);
-            if (responseDto == null)
-            {
-                return BadRequest("Registration failed.");
-            }
-
             if (string.IsNullOrEmpty(registerationRequestDto.Role))
-            {
-                registerationRequestDto.Role = StaticDetails.RoleCustomer;
-            }
+                registerationRequestDto.Role = StaticDetails.RoleUser;
 
-            var assignRole = await _authService.AssignRole(registerationRequestDto.Email, registerationRequestDto.Role);
-            if (!assignRole)
-            {
-                return BadRequest("Role assignment failed.");
-            }
+            var result = await _authService.RegisterAsync(registerationRequestDto);
 
-            return Json(new { success = true, message = "Registration successful!" });
+            return Json(new { success = result.Success, message = result.Message });
         }
 
 
@@ -91,33 +75,29 @@ namespace VehicleManagementSystem.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            var response = await _authService.LoginAsync(loginRequestDto);
-            if (response != null)
+            var result = await _authService.LoginAsync(loginRequestDto);
+            if (result.Success)
             {
-                var role = response.User.Role; // response içindeki role bilgisini alın
-
-                // Role'e göre yönlendirme
-                if (role == StaticDetails.RoleAdmin)
+                var role = result.Data.User.Role; // response içindeki role bilgisini alın
+                await SignInUser(result.Data);
+                return Json(new
                 {
-                    return Json(new
+                    success = result.Success,
+                    message = result.Message,
+                    data = new
                     {
-                        success = true,
-                        message = "Vehicle added successfully",
-                        data = new
-                        {
-                            Token = response.Token
-                        }
-                    });
-                }
-                else
-                {
-                    return RedirectToAction("GetAppointments", "Appointment");
-                }
+                        Role = role,
+                        Token = result.Data.Token
+                    }
+                });
             }
             else
             {
-                TempData["error"] = "Invalid username or password.";
-                return View(loginRequestDto);
+                return Json(new
+                {
+                    success = result.Success,
+                    message = result.Message
+                });
             }
         }
 

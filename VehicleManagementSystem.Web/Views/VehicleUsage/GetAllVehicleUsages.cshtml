@@ -1,4 +1,4 @@
-﻿@model IEnumerable<VehicleManagementSystem.Domain.Entities.VehicleUsage>
+﻿@model IEnumerable<VehicleManagementSystem.Application.DTOs.VehicleUsageDto>
 
 <!DOCTYPE html>
 <html>
@@ -12,7 +12,7 @@
         function drawCharts() {
             var vehicleData = @Html.Raw(Json.Serialize(Model.Select(v => new
             {
-                VehicleName = v.Vehicle.Name,
+                VehicleName = v.VehicleName,
                 ActiveHours = v.ActiveHours,
                 IdleHours = v.IdleHours
             })));
@@ -95,8 +95,8 @@
                         @foreach (var item in Model)
                         {
                             <tr id="row-@item.Id">
-                                <td>@item.Vehicle.Name</td>
-                                <td>@item.Vehicle.Plate</td>
+                                <td>@item.VehicleName</td>
+                                <td>@item.VehiclePlate</td>
                                 <td>@item.ActiveHours</td>
                                 <td>@item.MaintenanceHours</td>
                                 <td>@item.IdleHours</td>
